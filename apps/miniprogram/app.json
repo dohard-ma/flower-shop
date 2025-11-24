@@ -1,0 +1,54 @@
+{
+    "pages": [
+        "pages/admin/index",
+        "pages/home/index",
+        "pages/admin/upload/index",
+        "pages/user/index",
+        "pages/webview/index",
+        "pages/admin/products/index",
+        "pages/admin/detail/index"
+    ],
+    "tabBar": {
+        "color": "#999999",
+        "selectedColor": "#0c3d20",
+        "backgroundColor": "#ffffff",
+        "borderStyle": "black",
+        "list": [
+            {
+                "text": "首页",
+                "pagePath": "pages/home/index",
+                "iconPath": "assets/icons/home.png",
+                "selectedIconPath": "assets/icons/home-active.png"
+            },
+            {
+                "text": "管理",
+                "pagePath": "pages/admin/index",
+                "iconPath": "assets/icons/user.png",
+                "selectedIconPath": "assets/icons/user-active.png"
+            }
+        ]
+    },
+    "window": {
+        "backgroundTextStyle": "light",
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTitleText": "FANYANG",
+        "navigationBarTextStyle": "black"
+    },
+    "requiredPrivateInfos": [
+        "chooseAddress"
+    ],
+    "permission": {
+        "scope.address": {
+            "desc": "你的地址信息将用于收货地址选择"
+        }
+    },
+    "usingComponents": {},
+    "style": "v2",
+    "sitemapLocation": "sitemap.json",
+    "resolveAlias": {
+        "@/*": "/*",
+        "@/utils/*": "/utils/*",
+        "@/apis/*": "/utils/apis/*",
+        "@/config/*": "/config/*"
+    }
+}

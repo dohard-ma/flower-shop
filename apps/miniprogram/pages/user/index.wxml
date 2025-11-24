@@ -1,0 +1,113 @@
+<view class="user-center">
+  <!-- 顶部背景区域 -->
+  <view class="header-background"></view>
+  <!-- 用户信息区域 -->
+  <view class="user-info">
+    <view class="avatar-container">
+      <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill" />
+    </view>
+    <view class="user-details">
+      <view class="username">{{userInfo.nickname}}</view>
+      <view class="user-id">{{userInfo.phone}}</view>
+    </view>
+  </view>
+  <!-- 会员卡片 -->
+  <view class="membership-card" bindtap="onMembershipTap">
+    <view class="card-content">
+      <view class="membership-info">
+        <view class="crown-icon">👑</view>
+        <text class="membership-text">千礼挑一 普通会员</text>
+      </view>
+      <view class="upgrade-btn">开通会员 ></view>
+    </view>
+  </view>
+  <!-- 资产统计 -->
+  <view class="assets-section">
+    <view class="asset-item" bindtap="onAssetTap" data-type="balance">
+      <view class="asset-value">{{userAssets.balance || '0.00'}}</view>
+      <view class="asset-label">余额(元)</view>
+    </view>
+    <!-- <view class="asset-item" bindtap="onAssetTap" data-type="fanCoin">
+      <view class="asset-value">{{userAssets.fanCoin || '0.00'}}</view>
+      <view class="asset-label">梵氧币</view>
+    </view> -->
+    <view class="asset-item" bindtap="onAssetTap" data-type="coupons">
+      <view class="asset-value">{{userAssets.coupons || '0'}}</view>
+      <view class="asset-label">优惠券</view>
+    </view>
+    <!-- <view class="asset-item" bindtap="onAssetTap" data-type="points">
+      <view class="asset-value">{{userAssets.points || '0'}}</view>
+      <view class="asset-label">积分商城</view>
+    </view> -->
+  </view>
+  <!-- 会员服务 -->
+  <view class="services-section">
+    <view class="section-title">会员服务</view>
+    <view class="services-grid">
+      <view class="service-item" bindtap="onServiceTap" data-type="customer-service">
+        <view class="service-icon">
+          <image src="/assets/icons/customer-service.svg" mode="aspectFit" />
+        </view>
+        <view class="service-title">在线客服</view>
+        <view class="service-desc">9:00-24:00</view>
+      </view>
+      <view class="service-item" bindtap="onServiceTap" data-type="personal-advisor">
+        <view class="service-icon">
+          <image src="/assets/icons/personal-advisor.svg" mode="aspectFit" />
+        </view>
+        <view class="service-title">专属顾问</view>
+        <view class="service-desc">1v1专属服务</view>
+      </view>
+      <!-- <view class="service-item" bindtap="onServiceTap" data-type="birthday">
+        <view class="service-icon">
+          <image src="/assets/icons/birthday.svg" mode="aspectFit" />
+        </view>
+        <view class="service-title">我的生日</view>
+        <view class="service-desc">尊享生日权益</view>
+      </view> -->
+    </view>
+  </view>
+  <!-- 常用功能 -->
+  <view class="functions-section">
+    <view class="section-title">常用功能</view>
+    <view class="function-list">
+      <!-- <view class="function-item" bindtap="onFunctionTap" data-type="follow-wechat">
+        <view class="function-icon">📱</view>
+        <view class="function-content">
+          <view class="function-title">关注公众号</view>
+          <view class="function-desc">获取最新产品资讯 ></view>
+        </view>
+      </view> -->
+      <view class="function-item" bindtap="onFunctionTap" data-type="diy-cover">
+        <view class="function-icon">
+          <image src="/assets/icons/diy-cover.svg" mode="aspectFit" />
+        </view>
+        <view class="function-content">
+          <view class="function-title">我的电子封面</view>
+          <view class="function-desc">专属DIY电子封面</view>
+        </view>
+        <image class="arrow-right" src="/assets/icons/arrow-right.svg" mode="aspectFit" />
+      </view>
+      <!-- <view class="function-item" bindtap="onFunctionTap" data-type="address">
+        <view class="function-icon">
+          <image src="/assets/icons/address.svg" mode="aspectFit" />
+        </view>
+        <view class="function-content">
+          <view class="function-title">收货地址</view>
+          <view class="function-desc">收货地址管理</view>
+        </view>
+        <image class="arrow-right" src="/assets/icons/arrow-right.svg" mode="aspectFit" />
+      </view> -->
+      <view class="function-item" bindtap="onFunctionTap" data-type="complete-profile">
+        <view class="function-icon">
+          <image src="/assets/icons/complete-profile.svg" mode="aspectFit" />
+        </view>
+        <view class="function-content">
+          <view class="function-title">完善资料</view>
+          <view class="function-desc">收到礼物的人，将会看到你的昵称和头像</view>
+        </view>
+        <image class="arrow-right" src="/assets/icons/arrow-right.svg" mode="aspectFit" />
+      </view>
+    </view>
+  </view>
+</view>

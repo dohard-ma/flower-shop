@@ -1,0 +1,5 @@
+apps/server/node_modules
+apps/server/.next
+apps/server/out
+apps/server/build
+apps/server/dist

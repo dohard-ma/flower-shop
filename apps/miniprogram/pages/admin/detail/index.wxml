@@ -1,0 +1,119 @@
+<view class="container">
+    <!-- 媒体上传区域 -->
+    <view class="section">
+        <view class="section-title">商品图片/视频</view>
+        <view class="media-upload">
+            <!-- 已上传的媒体列表 -->
+            <view class="media-list">
+                <view class="media-item" wx:for="{{mediaList}}" wx:key="index">
+                    <image wx:if="{{item.type === 'image'}}" src="{{item.url}}" mode="aspectFill" class="media-preview" />
+                    <video wx:if="{{item.type === 'video'}}" src="{{item.url}}" class="media-preview" />
+                    <view class="media-delete" bindtap="onDeleteMedia" data-index="{{index}}">
+                        ×
+                    </view>
+                </view>
+                <!-- 添加媒体按钮 -->
+                <view class="media-add" bindtap="onAddMedia">
+                    <text class="add-icon">+</text>
+                    <text class="add-text">添加</text>
+                </view>
+            </view>
+        </view>
+    </view>
+    <!-- 语音输入区域 -->
+    <view class="section">
+        <view class="section-title-row">
+            <view class="section-title">快速录入</view>
+            <switch checked="{{inputMode === 'text'}}" bindchange="onInputModeChange" color="#27ae60" />
+            <text class="mode-text">{{inputMode === 'voice' ? '语音' : '文本'}}</text>
+        </view>
+        <view class="voice-input-area">
+            <!-- 语音录入模式 -->
+            <view wx:if="{{inputMode === 'voice'}}">
+                <view class="voice-button {{voiceStatus}}" bindtap="onVoiceButtonTap">
+                    <text class="voice-icon">{{voiceStatus === 'recording' ? '⏹' : '🎤'}}</text>
+                    <text class="voice-text">
+                        <text wx:if="{{voiceStatus === 'idle'}}">点击开始录音（最长2分钟）</text>
+                        <text wx:if="{{voiceStatus === 'recording'}}">
+                            录音中 {{recordTime}}s / 120s
+                        </text>
+                        <text wx:if="{{voiceStatus === 'processing'}}">转文字中...</text>
+                    </text>
+                </view>
+                <!-- 识别结果 -->
+                <view class="voice-result" wx:if="{{voiceText}}">
+                    <view class="result-text">{{voiceText}}</view>
+                </view>
+            </view>
+            <!-- 文本输入模式 -->
+            <view wx:else>
+                <textarea class="voice-textarea" placeholder="例如：仙子之吻玫瑰花束，粉玫瑰，10朵仙子之吻，圆形花束，适合送给恋人和朋友，售价200元。" value="{{voiceText}}" bindinput="onVoiceTextInput" auto-height maxlength="500" />
+                <view class="analyze-button" wx:if="{{voiceText}}" bindtap="onAnalyzeText">
+                    <text class="analyze-button-text">🤖 AI分析并填充表单</text>
+                </view>
+            </view>
+        </view>
+    </view>
+    <!-- 基本信息 -->
+    <view class="section">
+        <view class="section-title">基本信息</view>
+        <view class="form-group">
+            <view class="label">商品标题</view>
+            <textarea class="textarea" placeholder="请输入商品标题" value="{{formData.title}}" bindinput="onInputChange" data-field="title" auto-height maxlength="200" />
+        </view>
+        <view class="form-group">
+            <view class="label">价格 (¥)</view>
+            <input class="input" type="digit" placeholder="0.00" value="{{formData.price}}" bindinput="onInputChange" data-field="price" />
+        </view>
+        <view class="form-group">
+            <view class="label">款式</view>
+            <picker range="{{styleOptions}}" value="{{styleIndex}}" bindchange="onStyleChange">
+                <view class="picker">{{formData.style || '请选择款式'}}</view>
+            </picker>
+        </view>
+        <view class="form-group">
+            <view class="label">店内码</view>
+            <input class="input" placeholder="请输入店内码" value="{{formData.storeCode}}" bindinput="onInputChange" data-field="storeCode" />
+        </view>
+    </view>
+    <!-- 商品属性 -->
+    <view class="section">
+        <view class="section-title">商品属性</view>
+        <!-- 花材 -->
+        <view class="form-group">
+            <view class="label">花材</view>
+            <textarea class="textarea" placeholder="请输入花材" value="{{formData.flowers}}" bindinput="onInputChange" data-field="flowers" auto-height maxlength="200" />
+        </view>
+        <view class="form-group">
+            <view class="label">色系</view>
+            <picker range="{{colorOptions}}" value="{{colorIndex}}" bindchange="onColorChange">
+                <view class="picker">{{formData.colorScheme || '请选择色系'}}</view>
+            </picker>
+        </view>
+        <view class="form-group">
+            <view class="label">枝数/朵数</view>
+            <input class="input" type="number" placeholder="请输入数量" value="{{formData.quantity}}" bindinput="onInputChange" data-field="quantity" />
+        </view>
+        <view class="form-group">
+            <view class="label">适用人群</view>
+            <view class="target-audience-tags">
+                <view wx:for="{{targetAudienceOptions}}" wx:key="value" data-value="{{item.value}}" class="tag-item {{item.selected ? 'selected' : ''}}" bindtap="onTargetAudienceToggle">
+                    <text class="tag-text">{{item.value}}</text>
+                </view>
+            </view>
+        </view>
+        <view class="form-group">
+            <view class="label">店内分类</view>
+            <input class="input" placeholder="如：圆形花束、方形礼盒" value="{{formData.category}}" bindinput="onInputChange" data-field="category" />
+        </view>
+        <view class="form-group">
+            <view class="label">库存</view>
+            <input class="input" type="number" placeholder="请输入库存数量" value="{{formData.stock}}" bindinput="onInputChange" data-field="stock" />
+        </view>
+    </view>
+    <!-- 操作按钮 -->
+    <view class="actions">
+        <view class="button secondary" bindtap="onCancel">取消</view>
+        <view class="button primary" bindtap="onSave">{{mode === 'create' ? '创建' : '保存'}}</view>
+    </view>
+</view>

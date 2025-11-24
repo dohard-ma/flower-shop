@@ -1,0 +1,14 @@
+.container {
+    padding: 10rpx;
+
+    .list {
+        display: flex;
+        flex-direction: column;
+        gap: 10rpx;
+    }
+
+    .item {
+        padding: 40rpx;
+        background-color: #fff;
+    }
+}

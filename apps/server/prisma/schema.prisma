@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id             String   @id @default(cuid()) // 用户ID，使用cuid字符串
+  openid         String   @unique // 微信小程序用户唯一标识
+  nickname       String? // 用户昵称，可为空
+  avatar         String? // 用户头像URL，可为空
+  phone          String? // 联系电话，可为空
+  defaultAddress String?  @db.Text // 默认收货地址，可为空
+  permissions    Json? // 订阅模版权限JSON，存储用户授权的消息模板
+  createdAt      DateTime @default(now()) // 创建时间
+  updatedAt      DateTime @updatedAt // 更新时间
+
+  // 关联关系
+  orders      Order[] // 用户的订单
+  userCoupons UserCoupon[] // 用户的优惠券
+
+  @@map("users")
+}
+
+// 商品表
+model Product {
+  id             String   @id @default(cuid()) // 商品ID，使用cuid字符串
+  name           String // 商品名称
+  category       String? // 店主自定义分类，如"多巴胺系列"、"浪漫系列"等，可为空
+  style          String? // 商品类型：花束、花篮、花盒、桌花、手捧花、开业花篮、其他等（中文）
+  storeCode      String? // 商品编码，店铺内部编号
+  images         Json // 商品图片数组，存储多张图片URL
+  videos         Json? // 商品视频数组，可为空
+  priceRef       String // 参考价格，支持区间如"120-180"或固定价格"150"
+  materials      Json // 花材信息数组，包含花材名称（字符串数组），直接存储花材名称
+  targetAudience Json? // 赠送对象数组，包含赠送对象名称（字符串数组），如：恋人、母亲、朋友等
+  size           String? // 尺寸：XS、S、M、L
+  branchCount    Int? // 枝数
+  colorSeries    String? // 色系：粉色、蓝色、黄色、绿色、紫色、红色、白色、黑色、混搭等
+  stock          Int? // 库存数量，可为空
+  status         String   @default("ACTIVE") // 商品状态：ACTIVE(上架)、INACTIVE(下架)、DRAFT(草稿)
+  description    String?  @db.Text // 商品描述，可为空
+  sortOrder      Int      @default(0) // 排序权重
+  createdAt      DateTime @default(now()) // 创建时间
+  updatedAt      DateTime @updatedAt // 更新时间
+  remark         String?  @db.Text // 备注，可为空
+
+  // 关联关系
+  orders Order[] // 商品的订单
+
+  @@map("products")
+}
+
+// 订单表
+model Order {
+  id                    String    @id @default(cuid()) // 订单ID，使用cuid字符串
+  orderNumber           String    @unique // 订单号，用于展示给用户
+  userId                String // 用户ID，外键
+  productId             String // 商品ID，外键
+  productSnapshot       Json // 商品快照，防止商品信息变更影响历史订单
+  referenceImage        String? // 参考图片URL，用户上传的定制参考
+  actualPrice           Decimal   @db.Decimal(10, 2) // 实际支付价格
+  couponId              String? // 使用的优惠券UserCoupon记录ID，可为空
+  couponSnapshot        Json? // 优惠券快照，记录使用时的优惠券信息
+  isPreorder            Boolean   @default(false) // 是否预订，false为现货
+  size                  String? // 花束尺寸：XS、S、M、L、XL
+  requiredDeliveryTime  DateTime // 要求到货时间
+  deliveryAddress       String    @db.Text // 收货地址
+  distance              Decimal?  @db.Decimal(8, 2) // 距离（公里），用于计算配送费
+  plannedStartTime      DateTime? // 计划开始制作时间
+  plannedFinishTime     DateTime? // 计划完成制作时间
+  estimatedDeliveryTime DateTime? // 预计送货时间
+  recipientName         String // 收货人姓名
+  recipientPhone        String // 收货人电话
+  notes                 String?   @db.Text // 订单备注
+  status                String    @default("PENDING_PAYMENT") // 订单状态
+  userReview            String?   @db.Text // 用户评价文字
+  userReviewImages      Json? // 用户评价图片数组
+  userRating            Int? // 用户评分(1-5分)
+  paymentMethod         String    @default("OFFLINE") // 支付方式：OFFLINE(线下)、WECHAT(微信支付)
+  paymentStatus         String    @default("UNPAID") // 支付状态：UNPAID(未支付)、PAID(已支付)、REFUNDED(已退款)
+  deliveryFee           Decimal?  @db.Decimal(10, 2) // 配送费用
+  createdAt             DateTime  @default(now()) // 创建时间
+  updatedAt             DateTime  @updatedAt // 更新时间
+
+  // 关联关系
+  user       User        @relation(fields: [userId], references: [id])
+  product    Product     @relation(fields: [productId], references: [id])
+  userCoupon UserCoupon?
+
+  @@map("orders")
+}
+
+// 优惠券表
+model Coupon {
+  id            String   @id @default(cuid()) // 优惠券ID，使用cuid字符串
+  name          String // 优惠券名称
+  description   String? // 优惠券描述
+  type          String // 优惠券类型：DISCOUNT(满减)、PERCENTAGE(打折)
+  value         Decimal  @db.Decimal(10, 2) // 优惠金额(满减)或折扣比例(打折，如0.8表示8折)
+  minAmount     Decimal? @db.Decimal(10, 2) // 满减门槛金额，可为空
+  maxDiscount   Decimal? @db.Decimal(10, 2) // 打折券最大优惠金额，防止损失过大
+  totalQuantity Int      @default(1) // 总发放数量
+  usedQuantity  Int      @default(0) // 已使用数量
+  validFrom     DateTime // 有效期开始时间
+  validTo       DateTime // 有效期结束时间
+  status        String   @default("ACTIVE") // 优惠券状态：ACTIVE(有效)、INACTIVE(无效)、EXHAUSTED(已抢完)
+  createdAt     DateTime @default(now()) // 创建时间
+  updatedAt     DateTime @updatedAt // 更新时间
+
+  // 关联关系
+  userCoupons UserCoupon[] // 用户领取的优惠券
+
+  @@map("coupons")
+}
+
+// 用户优惠券关联表
+model UserCoupon {
+  id         String    @id @default(cuid()) // 记录ID，使用cuid字符串
+  userId     String // 用户ID，外键
+  couponId   String // 优惠券ID，外键
+  orderId    String?   @unique // 关联的订单ID，使用时填写
+  status     String    @default("UNUSED") // 使用状态：UNUSED(未使用)、USED(已使用)、EXPIRED(已过期)
+  receivedAt DateTime  @default(now()) // 领取时间
+  usedAt     DateTime? // 使用时间，可为空
+
+  // 关联关系
+  user   User   @relation(fields: [userId], references: [id])
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  order  Order? @relation(fields: [orderId], references: [id])
+
+  // 复合唯一索引，防止用户重复领取同一优惠券
+  @@unique([userId, couponId])
+  @@map("user_coupons")
+}
+
+// 消息推送记录表 - 用于用户触达
+model PushMessage {
+  id         String    @id @default(cuid()) // 消息ID，使用cuid字符串
+  userId     String? // 用户ID，为空表示群发
+  type       String // 消息类型：ORDER_UPDATE(订单更新)、MARKETING(营销)、REMINDER(提醒)
+  title      String // 消息标题
+  content    String    @db.Text // 消息内容
+  templateId String? // 微信模板消息ID
+  status     String    @default("PENDING") // 发送状态：PENDING(待发送)、SENT(已发送)、FAILED(发送失败)
+  sentAt     DateTime? // 发送时间
+  createdAt  DateTime  @default(now()) // 创建时间
+
+  @@map("push_messages")
+}
+
+// 后台管理员用户表
+model AdminUser {
+  id        Int      @id @default(autoincrement()) @map("admin_user_id")
+  username  String   @unique // 用户名，唯一
+  password  String // MD5加密后的密码
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_user")
+}

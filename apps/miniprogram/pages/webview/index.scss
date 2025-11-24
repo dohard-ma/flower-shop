@@ -1,0 +1,70 @@
+page {
+  height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.webview-container {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  background-color: #ffffff;
+}
+
+/* 加载状态样式 */
+.loading-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.loading-text {
+  font-size: 32rpx;
+  color: #666666;
+  margin-top: 20rpx;
+}
+
+/* 错误状态样式 */
+.error-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.error-text {
+  font-size: 32rpx;
+  color: #999999;
+  margin-bottom: 40rpx;
+  text-align: center;
+}
+
+.retry-button {
+  padding: 20rpx 40rpx;
+  background-color: #007aff;
+  color: #ffffff;
+  border-radius: 8rpx;
+  border: none;
+  font-size: 28rpx;
+  margin: 0;
+}
+
+.retry-button::after {
+  border: none;
+}
+
+/* WebView样式 */
+web-view {
+  width: 100%;
+  height: 100%;
+}

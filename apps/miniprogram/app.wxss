@@ -1,0 +1,7 @@
+/**app.wxss**/
+@import "./style/common.wxss";
+
+/* 统一设置背景色 */
+page {
+  background-color: #f4f4f4;
+}

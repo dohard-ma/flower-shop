@@ -1,0 +1,14 @@
+{
+    "name": "miniprogram",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "compile": "tsc -p tsconfig.json",
+        "watch": "tsc -p tsconfig.json -w"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "miniprogram-api-typings": "^3.9.1",
+        "typescript": "^5.0.0"
+    }
+}
