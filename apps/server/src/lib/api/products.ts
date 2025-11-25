@@ -1,52 +1,5 @@
 import prisma from '@/lib/prisma';
 
-/**
- * 处理七牛云图片URL，添加压缩参数
- * @param url 原始图片URL
- * @param options 处理选项
- * @returns 处理后的图片URL
- */
-function processQiniuImageUrl(
-  url: string,
-  options: {
-    width?: number;
-    height?: number;
-    quality?: number;
-  } = {}
-): string {
-  if (!url || typeof url !== 'string') return url;
-
-  const { width = 500, height = 500, quality = 85 } = options;
-  const params: string[] = [];
-
-  // 缩略图处理（1:1比例，等比缩放并居中裁剪）
-  params.push(`thumbnail/${width}x${height}`);
-
-  // 质量压缩
-  params.push(`quality/${quality}`);
-
-  // 组合处理参数
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}imageMogr2/${params.join('/')}`;
-}
-
-/**
- * 处理产品图片数组
- * @param images 图片数组
- * @returns 处理后的图片数组
- */
-function processProductImages(images: any): string[] {
-  if (!images) return [];
-
-  const imageArray = Array.isArray(images) ? images : (typeof images === 'string' ? JSON.parse(images) : []);
-
-  return imageArray.map((url: string) => processQiniuImageUrl(url, {
-    width: 500,
-    height: 500,
-    quality: 85
-  }));
-}
-
 // 获取商品列表
 export async function getProducts(params: {
   page?: number;
@@ -115,14 +68,8 @@ export async function getProducts(params: {
     const total = targetAudience ? filteredProducts.length : totalCount;
     const paginatedProducts = filteredProducts.slice(skip, skip + pageSize);
 
-    // 处理产品图片URL，添加压缩参数
-    const processedProducts = paginatedProducts.map(product => ({
-      ...product,
-      images: processProductImages(product.images)
-    }));
-
     return {
-      list: processedProducts,
+      list: paginatedProducts,
       total,
       page,
       pageSize
@@ -143,11 +90,7 @@ export async function getProductById(id: string) {
       throw new Error('商品不存在');
     }
 
-    // 处理产品图片URL，添加压缩参数（详情页可以使用更大的尺寸）
-    return {
-      ...product,
-      images: processProductImages(product.images)
-    };
+    return product;
   } catch (error) {
     throw error;
   }

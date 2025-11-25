@@ -2,7 +2,44 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+/**
+ * 处理七牛云图片URL，添加压缩参数（用于列表缩略图）
+ * @param url 原始图片URL
+ * @param options 处理选项
+ * @returns 处理后的图片URL
+ */
+function processQiniuImageUrl(
+    url: string,
+    options: {
+        width?: number;
+        height?: number;
+        quality?: number;
+    } = {}
+): string {
+    if (!url || typeof url !== 'string') return url;
+
+    // 检查是否已经包含图片处理参数，避免重复添加
+    if (url.includes('imageMogr2') || url.includes('imageView2')) {
+        return url;
+    }
+
+    const { width = 500, height = 500, quality = 85 } = options;
+    const params: string[] = [];
+
+    // 缩略图处理：使用居中裁剪模式，保持图片方向
+    params.push(`auto-orient`); // 自动根据 EXIF 信息旋转图片
+    params.push(`thumbnail/${width}x${height}`); // 等比缩放并居中裁剪
+
+    // 质量压缩
+    params.push(`quality/${quality}`);
+
+    // 组合处理参数
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}imageMogr2/${params.join('/')}`;
+}
 
 interface Product {
     id: string;
@@ -33,6 +70,9 @@ const STYLE_OPTIONS = ['花束', '花篮', '花盒', '桌花', '手捧花', '抱
 const COLOR_OPTIONS = ['红', '粉', '白', '黄', '紫', '橙', '蓝', '绿', '混搭'];
 
 export default function DiscoverPage() {
+
+    const { toast } = useToast();
+
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -57,6 +97,9 @@ export default function DiscoverPage() {
     const [selectedStyle, setSelectedStyle] = useState<string>('');
     const [selectedColor, setSelectedColor] = useState<string>('');
     const [showLikedOnly, setShowLikedOnly] = useState(false);
+
+    // 图片预览状态
+    const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
     // 确保客户端渲染一致性，避免 hydration 错误
     useEffect(() => {
@@ -236,13 +279,51 @@ export default function DiscoverPage() {
         return true;
     });
 
+    // 打开图片预览
+    const openPreview = (index: number) => {
+        setPreviewIndex(index);
+        document.body.style.overflow = 'hidden'; // 禁止背景滚动
+    };
+
+    // 关闭图片预览
+    const closePreview = () => {
+        setPreviewIndex(null);
+        document.body.style.overflow = ''; // 恢复滚动
+    };
+
+    // 键盘事件处理（ESC 关闭）
+    useEffect(() => {
+        if (previewIndex === null) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                closePreview();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [previewIndex]);
+
+    // 功能尚未实现的提示
+    const showTips = () => {
+        toast({
+            title: '功能尚未实现',
+            description: '敬请期待',
+            variant: 'default',
+            duration: 500,
+        });
+    }
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* 顶部导航栏 */}
             <header className="bg-white sticky top-0 z-50 shadow-sm">
                 <div className="flex items-center justify-between px-4 py-3">
                     {/* 左侧菜单 */}
-                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" onClick={showTips}>
                         <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -252,7 +333,7 @@ export default function DiscoverPage() {
                     <h1 className="text-lg font-semibold text-gray-900">发现</h1>
 
                     {/* 右侧购物袋 */}
-                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors relative" onClick={showTips}>
                         <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
@@ -466,18 +547,22 @@ export default function DiscoverPage() {
                     </div>
                 ) : filteredProducts.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
-                        {filteredProducts.map((product) => (
-                            <Link
+                        {filteredProducts.map((product, index) => (
+                            <div
                                 key={product.id}
-                                href={`/products/${product.id}`}
-                                className="block group"
+                                className="block group cursor-pointer"
+                                onClick={() => openPreview(index)}
                             >
                                 <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                                     {/* 商品图片 */}
-                                    <div className="relative aspect-[3/4] overflow-hidden">
+                                    <div className="relative aspect-[1/1] overflow-hidden">
                                         {product.images && product.images.length > 0 ? (
                                             <Image
-                                                src={product.images[0]}
+                                                src={processQiniuImageUrl(product.images[0], {
+                                                    width: 500,
+                                                    height: 500,
+                                                    quality: 85
+                                                })}
                                                 alt={product.name}
                                                 fill
                                                 className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -534,14 +619,14 @@ export default function DiscoverPage() {
                                         <h3 className="font-medium text-gray-900 text-sm mb-2 line-clamp-2 leading-relaxed">
                                             {product.name}
                                         </h3>
-                                        <div className="flex items-center justify-between">
+                                        {/* <div className="flex items-center justify-between">
                                             <span className="text-red-500 font-semibold text-base">
                                                 ¥{product.priceRef}
                                             </span>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
-                            </Link>
+                            </div>
                         ))}
                     </div>
                 ) : (
@@ -583,6 +668,53 @@ export default function DiscoverPage() {
                 )}
             </main>
 
+            {/* 全屏图片预览 */}
+            {previewIndex !== null && filteredProducts[previewIndex] && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
+                    onClick={closePreview}
+                >
+                    {/* 关闭按钮 */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            closePreview();
+                        }}
+                        className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
+                        aria-label="关闭预览"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+
+                    {/* 图片容器 - 点击图片也关闭预览 */}
+                    <div className="relative w-full h-full flex items-center justify-center p-4">
+                        {filteredProducts[previewIndex].images && filteredProducts[previewIndex].images.length > 0 ? (
+                            <div className="relative w-full h-full max-w-4xl max-h-full">
+                                <Image
+                                    src={filteredProducts[previewIndex].images[0]}
+                                    alt={filteredProducts[previewIndex].name}
+                                    fill
+                                    className="object-contain cursor-pointer"
+                                    sizes="100vw"
+                                    priority
+                                    onClick={closePreview}
+                                />
+                            </div>
+                        ) : (
+                            <div className="text-white text-center">
+                                <p>暂无图片</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 图片信息 */}
+                    <div className="absolute bottom-4 left-0 right-0 z-10 text-center text-white pointer-events-none">
+                        <p className="text-base font-medium">
+                            {filteredProducts[previewIndex].name}
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

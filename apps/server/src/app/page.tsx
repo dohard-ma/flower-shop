@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Sparkles, Zap, Camera, Truck, CheckCircle, Clock, Gift, ArrowDown,
@@ -13,10 +13,7 @@ interface ThemeConfig {
   name: string;
   logo: string;
   slogan: string;
-  socialMedia: {
-    xiaohongshu: string;
-    douyin: string;
-  };
+  socialMedia?: { url: string; name: string; channel: string }[];
   customerService: string;
 }
 
@@ -26,10 +23,23 @@ const THEME_CONFIGS: Record<string, ThemeConfig> = {
     name: '',
     logo: '/logo.png',
     slogan: '用花，陪伴您的每个重要时刻',
-    socialMedia: {
-      xiaohongshu: '小红书 @花语AI',
-      douyin: '抖音 @花语AI'
-    },
+    socialMedia: [
+      {
+        url: 'https://www.xiaohongshu.com/user/profile/6524138f000000002b003377',
+        name: '@花涧里',
+        channel: 'xiaohongshu'
+      },
+      {
+        url: 'https://www.xiaohongshu.com/user/profile/6721aceb000000001d02e7b7',
+        name: '@花时予',
+        channel: 'xiaohongshu'
+      },
+      {
+        url: 'https://v.douyin.com/F80nvksPK9c/',
+        name: '@花涧里',
+        channel: 'douyin'
+      }
+    ],
     customerService: 'huayu_ai'
   },
   // 示例：可以添加更多租户配置
@@ -37,20 +47,12 @@ const THEME_CONFIGS: Record<string, ThemeConfig> = {
     name: '花语定制',
     logo: '/logo.png',
     slogan: '专属花束，定制你的美好时光',
-    socialMedia: {
-      xiaohongshu: '小红书 @花语定制',
-      douyin: '抖音 @花语定制'
-    },
     customerService: 'huayu_custom'
   },
   tenant2: {
     name: '花艺生活',
     logo: '/logo.png',
     slogan: '让每一束花都充满温度',
-    socialMedia: {
-      xiaohongshu: '小红书 @花艺生活',
-      douyin: '抖音 @花艺生活'
-    },
     customerService: 'huayi_life'
   }
 };
@@ -217,11 +219,8 @@ function TestimonialsSection() {
 
   const galleryImages = [
     { src: 'https://static.laohuoji.link/huajianli/gallery/2025-11-24_153210_602.jpg?imageMogr2/thumbnail/500x500/quality/85', alt: '用户实拍花束1' },
-    { src: 'https://static.laohuoji.link/huajianli/gallery/20251113222619_82_93.jpg?imageMogr2/thumbnail/500x500/quality/85', alt: '用户实拍花束2' },
+    { src: 'https://static.laohuoji.link/huajianli/gallery/20251113222619_82_93.jpg?imageMogr2/quality/20', alt: '用户实拍花束2' },
     { src: 'https://static.laohuoji.link/huajianli/gallery/20251122184926_195_221.jpg?imageMogr2/thumbnail/500x500/quality/85', alt: '用户实拍花束3' },
-    { src: '/placeholder.jpg', alt: '用户实拍花束4' },
-    { src: '/placeholder.jpg', alt: '用户实拍花束5' },
-    { src: '/placeholder.jpg', alt: '用户实拍花束6' }
   ];
 
   return (
@@ -248,6 +247,8 @@ function TestimonialsSection() {
             <p className="text-sm leading-relaxed text-gray-700">{review.content}</p>
           </div>
         ))}
+        <h2 className="text-center text-2xl font-semibold mb-10">客户实拍</h2>
+
         <div className="grid grid-cols-3 gap-2 mt-5">
           {galleryImages.map((img, index) => (
             <div key={index} className="aspect-square relative rounded-lg overflow-hidden bg-gray-100">
@@ -289,7 +290,7 @@ function GuaranteeSection() {
   return (
     <section className="py-10 px-5 bg-white">
       <h2 className="text-center text-2xl font-semibold mb-10">服务承诺</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+      <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
         {guarantees.map((item, index) => (
           <div key={index} className="text-center">
             <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-full flex items-center justify-center">
@@ -304,6 +305,18 @@ function GuaranteeSection() {
   );
 }
 
+const DouyinIcon = () => {
+  return (
+    <Image src="/douyin.svg" alt="Douyin" width={20} height={20} />
+  );
+};
+
+const XiaoHongShuIcon = () => {
+  return (
+    <Image src="/xiaohongshu.svg" alt="XiaoHongShu" width={20} height={20} />
+  );
+};
+
 // 底部组件
 interface FooterSectionProps {
   theme: ThemeConfig;
@@ -313,20 +326,15 @@ function FooterSection({ theme }: FooterSectionProps) {
   return (
     <footer className="py-10 px-5 bg-gray-900 text-white text-center">
       <div className="flex justify-center gap-5 mb-5 flex-wrap">
-        <a
-          href="#"
-          className="flex items-center gap-1.5 text-sm px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors"
-        >
-          <Instagram className="w-4 h-4" />
-          <span>{theme.socialMedia.xiaohongshu}</span>
-        </a>
-        <a
-          href="#"
-          className="flex items-center gap-1.5 text-sm px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors"
-        >
-          <Music className="w-4 h-4" />
-          <span>{theme.socialMedia.douyin}</span>
-        </a>
+        {theme.socialMedia?.map((item) => (
+          <a
+            href={item.url}
+            className="flex items-center gap-1.5 text-sm px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors"
+          >
+            {item.channel === 'xiaohongshu' ? <XiaoHongShuIcon /> : <DouyinIcon />}
+            <span>{item.name}</span>
+          </a>
+        ))}
       </div>
       <div className="text-xs text-gray-400 leading-relaxed">
         客服微信：{theme.customerService}<br />
@@ -336,8 +344,8 @@ function FooterSection({ theme }: FooterSectionProps) {
   );
 }
 
-// 主页面组件
-export default function WelcomePage() {
+// 主题选择组件（需要 useSearchParams）
+function ThemeSelector() {
   const searchParams = useSearchParams();
   const tenant = searchParams.get('tenant') || 'default';
 
@@ -352,5 +360,21 @@ export default function WelcomePage() {
       <GuaranteeSection />
       <FooterSection theme={theme} />
     </div>
+  );
+}
+
+// 主页面组件
+export default function WelcomePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <ThemeSelector />
+    </Suspense>
   );
 }

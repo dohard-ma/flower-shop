@@ -6,8 +6,8 @@ module.exports = {
     "./components/**/*.{ts,tsx,js,jsx,mdx}",
     "./app/**/*.{ts,tsx,js,jsx,mdx}",
     "./src/**/*.{ts,tsx}",
-      "*.{js,ts,jsx,tsx,mdx}"
-],
+    "*.{js,ts,jsx,tsx,mdx}"
+  ],
   theme: {
     container: {
       center: true,
@@ -66,41 +66,10 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
-        "fade-in-down": {
-          from: {
-            opacity: "0",
-            transform: "translateY(-20px)",
-          },
-          to: {
-            opacity: "1",
-            transform: "translateY(0)",
-          },
-        },
-        "fade-in-up": {
-          from: {
-            opacity: "0",
-            transform: "translateY(20px)",
-          },
-          to: {
-            opacity: "1",
-            transform: "translateY(0)",
-          },
-        },
-        "pulse-shadow": {
-          "0%, 100%": {
-            boxShadow: "0 8px 24px rgba(255, 107, 107, 0.3)",
-          },
-          "50%": {
-            boxShadow: "0 12px 32px rgba(255, 107, 107, 0.5)",
-          },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in-down": "fade-in-down 0.8s ease-out",
-        "fade-in-up": "fade-in-up 0.8s ease-out 0.2s both",
-        "pulse-shadow": "pulse-shadow 2s infinite",
       },
     },
   },

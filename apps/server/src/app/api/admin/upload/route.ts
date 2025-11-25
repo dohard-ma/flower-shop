@@ -40,15 +40,8 @@ export async function POST(request: NextRequest) {
 
     let directory = '';
     switch (uploadType) {
-      case 'coverImage':
-        directory = OSS_DIR.PRODUCTS.COVER;
-        break;
       case 'images':
         directory = OSS_DIR.PRODUCTS.IMAGES;
-        break;
-      case 'giftCard':
-        // 礼品卡封面
-        directory = OSS_DIR.PRODUCTS.GIFT_CARD;
         break;
     }
 
