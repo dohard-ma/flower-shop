@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* 模拟简单的 Tailwind 类与基础样式 */
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .poster-container {
+            width: 375px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            /* 模拟柔和的纸张质感背景 */
+            background-image: linear-gradient(to bottom, #fffcf5, #fff);
+        }
+
+        .header {
+            text-align: center;
+            padding: 32px 20px 20px;
+        }
+
+        .header h1 {
+            font-family: "Songti SC", "Noto Serif SC", serif;
+            /* 宋体，更有花艺的气质 */
+            color: #be185d;
+            /* 玫瑰红 */
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 12px;
+            margin-top: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* 图片展示区 */
+        .gallery {
+            padding: 0 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .img-box {
+            width: 150px;
+            height: 180px;
+            border-radius: 8px;
+            /* 圆角稍微小一点，显得精致 */
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 装饰性元素 */
+        .divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0;
+            color: #e5e7eb;
+        }
+
+        .divider-line {
+            width: 40px;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider-icon {
+            margin: 0 10px;
+            color: #fbcfe8;
+            font-size: 16px;
+        }
+
+        /* 底部二维码区 */
+        .footer {
+            background: #fff0f5;
+            /* 极淡的粉色底 */
+            padding: 24px 20px 32px;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px dashed #f9a8d4;
+            position: relative;
+        }
+
+        /* 模拟半圆缺口，像邮票或优惠券 */
+        .notch {
+            position: absolute;
+            top: -10px;
+            width: 20px;
+            height: 20px;
+            background: #f3f4f6;
+            /* 与body背景同色 */
+            border-radius: 50%;
+        }
+
+        .notch-left {
+            left: -10px;
+        }
+
+        .notch-right {
+            right: -10px;
+        }
+
+        .qr-box {
+            background: #fff;
+            padding: 10px;
+            display: inline-block;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .qr-img {
+            width: 100px;
+            height: 100px;
+            background: #333;
+            /* 模拟二维码 */
+            opacity: 0.8;
+            /* 这里为了演示效果，用个简单的图案代替 */
+            background-image: repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, #fff 25%, #fff 75%, #000 75%, #000);
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px;
+        }
+
+        .cta-text {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .brand-text {
+            margin-top: 6px;
+            font-size: 10px;
+            color: #9ca3af;
+        }
+
+        /* 按钮区域 (不属于海报本身，属于UI) */
+        .ui-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #fb7185, #f43f5e);
+            color: white;
+            box-shadow: 0 4px 10px rgba(244, 63, 94, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #555;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div style="display:flex; flex-direction:column; align-items:center;">
+        <div class="poster-container">
+            <div class="header">
+                <h1>甄选·花礼</h1>
+                <p>SPECIALLY SELECTED FOR YOU</p>
+            </div>
+
+            <div style="position: relative; height: 220px; margin-bottom: 20px;">
+
+                <div
+                    style="position: absolute; width: 140px; height: 170px; left: 30px; top: 10px; transform: rotate(-5deg); z-index: 1; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: 4px solid white; background: white; border-radius: 4px; overflow: hidden;">
+                    <img src="https://images.unsplash.com/photo-1586520150912-32005a76564e?w=300"
+                        style="width:100%; height:100%; object-fit: cover;">
+                </div>
+
+                <div
+                    style="position: absolute; width: 140px; height: 170px; left: 120px; top: 30px; transform: rotate(3deg); z-index: 2; box-shadow: 0 4px 8px rgba(0,0,0,0.15); border: 4px solid white; background: white; border-radius: 4px; overflow: hidden;">
+                    <img src="https://images.unsplash.com/photo-1562690868-60bbe7293e94?w=300"
+                        style="width:100%; height:100%; object-fit: cover;">
+                </div>
+
+                <div
+                    style="position: absolute; width: 150px; height: 180px; left: 70px; top: 0px; transform: rotate(-1deg); z-index: 3; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border: 4px solid white; background: white; border-radius: 4px; overflow: hidden;">
+                    <img src="https://images.unsplash.com/photo-1507646227500-4d38996632f6?w=300"
+                        style="width:100%; height:100%; object-fit: cover;">
+                </div>
+
+            </div>
+
+            <div class="divider">
+                <div class="divider-line"></div>
+                <div class="divider-icon">✿</div>
+                <div class="divider-line"></div>
+            </div>
+
+            <div class="footer">
+                <div class="notch notch-left"></div>
+                <div class="notch notch-right"></div>
+
+                <div class="qr-box">
+                    <div class="qr-img"></div>
+                </div>
+                <div class="cta-text">长按识别 查看详情</div>
+                <div class="brand-text">用花，陪伴您的每个重要时刻</div>
+            </div>
+        </div>
+
+
+
+
+
+
+        <div class="ui-actions">
+            <button class="btn btn-secondary">取消</button>
+            <button class="btn btn-primary">保存图片</button>
+        </div>
+    </div>
+
+</body>
+
+</html>

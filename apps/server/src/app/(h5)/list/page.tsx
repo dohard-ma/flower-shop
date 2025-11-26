@@ -1,9 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import { X, Share2, Home, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { generateShareImage } from '@/utils/share-image-generator';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 /**
  * 处理七牛云图片URL，添加压缩参数（用于列表缩略图）
@@ -69,9 +81,11 @@ interface ApiResponse {
 const STYLE_OPTIONS = ['花束', '花篮', '花盒', '桌花', '手捧花', '抱抱桶', '开业花篮', '其他'];
 const COLOR_OPTIONS = ['红', '粉', '白', '黄', '紫', '橙', '蓝', '绿', '混搭'];
 
-export default function DiscoverPage() {
-
+// 主内容组件（使用 useSearchParams）
+function DiscoverPageContent() {
     const { toast } = useToast();
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -97,14 +111,77 @@ export default function DiscoverPage() {
     const [selectedStyle, setSelectedStyle] = useState<string>('');
     const [selectedColor, setSelectedColor] = useState<string>('');
     const [showLikedOnly, setShowLikedOnly] = useState(false);
+    const [showSharedOnly, setShowSharedOnly] = useState(false);
+    const [sharedProductIds, setSharedProductIds] = useState<Set<string>>(new Set());
 
     // 图片预览状态
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+
+    // 分享图片生成状态
+    const [showShareImage, setShowShareImage] = useState(false);
+    const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
+    const [isGeneratingShareImage, setIsGeneratingShareImage] = useState(false);
+    const shareCanvasRef = useRef<HTMLCanvasElement>(null);
+
+    // 从 localStorage 加载喜欢的商品
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('likedProducts');
+                if (saved) {
+                    const savedIds = JSON.parse(saved) as string[];
+                    setLikedProducts(new Set(savedIds));
+                }
+            } catch (err) {
+                console.error('Failed to load liked products from localStorage:', err);
+            }
+        }
+    }, []);
+
+    // 保存喜欢的商品到 localStorage
+    const saveLikedProductsToStorage = useCallback((likedSet: Set<string>) => {
+        if (typeof window !== 'undefined') {
+            try {
+                const idsArray = Array.from(likedSet);
+                localStorage.setItem('likedProducts', JSON.stringify(idsArray));
+            } catch (err) {
+                console.error('Failed to save liked products to localStorage:', err);
+            }
+        }
+    }, []);
 
     // 确保客户端渲染一致性，避免 hydration 错误
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // 检查URL参数中的分享信息（只要URL中有分享ID，就一直显示为您推荐选项，并默认激活）
+    const hasInitializedShared = useRef(false);
+    useEffect(() => {
+        if (!mounted) return;
+
+        const sharedIds = searchParams.get('shared');
+        if (sharedIds && !hasInitializedShared.current) {
+            try {
+                const ids = sharedIds.split(',').filter(Boolean);
+                if (ids.length > 0) {
+                    setSharedProductIds(new Set(ids));
+                    // 默认激活"为您推荐"筛选
+                    setShowSharedOnly(true);
+                    setShowLikedOnly(false);
+                    // 清除款式和色系筛选
+                    setSelectedStyle('');
+                    setSelectedColor('');
+                    hasInitializedShared.current = true;
+                }
+            } catch (err) {
+                console.error('Failed to parse shared product IDs:', err);
+            }
+        } else if (!sharedIds) {
+            // 如果URL中没有shared参数，重置标记
+            hasInitializedShared.current = false;
+        }
+    }, [mounted, searchParams]);
 
     // 点击外部关闭下拉菜单
     useEffect(() => {
@@ -139,8 +216,20 @@ export default function DiscoverPage() {
             } else {
                 newSet.add(productId);
             }
+            // 保存到 localStorage
+            saveLikedProductsToStorage(newSet);
             return newSet;
         });
+    };
+
+    // 清除确认对话框状态
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+    // 清除所有喜欢的商品
+    const clearAllLiked = () => {
+        setLikedProducts(new Set());
+        saveLikedProductsToStorage(new Set());
+        setShowClearConfirm(false);
     };
 
     // 获取产品列表
@@ -219,7 +308,7 @@ export default function DiscoverPage() {
 
     // 滚动加载更多
     useEffect(() => {
-        if (!mounted || loading || loadingMore || !hasMore || showLikedOnly) return;
+        if (!mounted || loading || loadingMore || !hasMore || showLikedOnly || showSharedOnly) return;
 
         let scrollTimer: NodeJS.Timeout | null = null;
 
@@ -271,13 +360,83 @@ export default function DiscoverPage() {
         };
     }, [mounted, loading, loadingMore, hasMore, showLikedOnly, fetchProducts]);
 
-    // 过滤"我喜欢"
+    // 过滤产品
     const filteredProducts = products.filter(product => {
+        // 先应用"我喜欢"或"为您推荐"筛选
         if (showLikedOnly) {
-            return likedProducts.has(product.id);
+            if (!likedProducts.has(product.id)) return false;
+        } else if (showSharedOnly) {
+            if (!sharedProductIds.has(product.id)) return false;
         }
+
+        // 如果选择了"我喜欢"或"为您推荐"，不应用款式和色系筛选
+        if (showLikedOnly || showSharedOnly) {
+            return true;
+        }
+
+        // 否则应用款式和色系筛选
+        if (selectedStyle && product.style !== selectedStyle) {
+            return false;
+        }
+        if (selectedColor && product.colorSeries !== selectedColor) {
+            return false;
+        }
+
         return true;
     });
+
+    // 生成分享图片
+    const handleGenerateShareImage = async () => {
+        const likedIds = Array.from(likedProducts);
+        if (likedIds.length === 0) {
+            toast({
+                title: '暂无分享内容',
+                description: '请先选择您喜欢的花束',
+                variant: 'default',
+            });
+            return;
+        }
+
+        setIsGeneratingShareImage(true);
+
+        try {
+            const currentUrl = window.location.origin + window.location.pathname;
+            const shareUrl = `${currentUrl}?shared=${likedIds.join(',')}`;
+
+            // 获取喜欢的产品信息
+            const likedProductsList = filteredProducts.filter(p => likedProducts.has(p.id));
+
+            const imageUrl = await generateShareImage({
+                products: likedProductsList,
+                shareUrl,
+                processImageUrl: processQiniuImageUrl,
+            });
+
+            setShareImageUrl(imageUrl);
+            setShowShareImage(true);
+        } catch (err) {
+            console.error('Failed to generate share image:', err);
+            toast({
+                title: '生成分享图失败',
+                description: '请稍后重试',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsGeneratingShareImage(false);
+        }
+    };
+
+    // 下载分享图片
+    const downloadShareImage = () => {
+        if (!shareImageUrl) return;
+
+        const link = document.createElement('a');
+        link.download = `花束分享-${new Date().getTime()}.png`;
+        link.href = shareImageUrl;
+        link.click();
+
+    };
+
 
     // 打开图片预览
     const openPreview = (index: number) => {
@@ -322,11 +481,13 @@ export default function DiscoverPage() {
             {/* 顶部导航栏 */}
             <header className="bg-white sticky top-0 z-50 shadow-sm">
                 <div className="flex items-center justify-between px-4 py-3">
-                    {/* 左侧菜单 */}
-                    <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" onClick={showTips}>
-                        <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
+                    {/* 左侧 Home 按钮 */}
+                    <button
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        onClick={() => router.push('/')}
+                        aria-label="返回首页"
+                    >
+                        <Home className="w-6 h-6 text-gray-700" />
                     </button>
 
                     {/* 标题 */}
@@ -396,6 +557,9 @@ export default function DiscoverPage() {
                                     onClick={() => {
                                         setSelectedStyle('');
                                         setShowStyleFilter(false);
+                                        // 取消"我喜欢"和"为您推荐"
+                                        setShowLikedOnly(false);
+                                        setShowSharedOnly(false);
                                     }}
                                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${!selectedStyle ? 'bg-pink-50 text-pink-600' : ''}`}
                                 >
@@ -407,6 +571,9 @@ export default function DiscoverPage() {
                                         onClick={() => {
                                             setSelectedStyle(style);
                                             setShowStyleFilter(false);
+                                            // 取消"我喜欢"和"为您推荐"
+                                            setShowLikedOnly(false);
+                                            setShowSharedOnly(false);
                                         }}
                                         className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedStyle === style ? 'bg-pink-50 text-pink-600' : ''}`}
                                     >
@@ -453,6 +620,9 @@ export default function DiscoverPage() {
                                     onClick={() => {
                                         setSelectedColor('');
                                         setShowColorFilter(false);
+                                        // 取消"我喜欢"和"为您推荐"
+                                        setShowLikedOnly(false);
+                                        setShowSharedOnly(false);
                                     }}
                                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${!selectedColor ? 'bg-pink-50 text-pink-600' : ''}`}
                                 >
@@ -464,6 +634,9 @@ export default function DiscoverPage() {
                                         onClick={() => {
                                             setSelectedColor(color);
                                             setShowColorFilter(false);
+                                            // 取消"我喜欢"和"为您推荐"
+                                            setShowLikedOnly(false);
+                                            setShowSharedOnly(false);
                                         }}
                                         className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedColor === color ? 'bg-pink-50 text-pink-600' : ''}`}
                                     >
@@ -479,7 +652,15 @@ export default function DiscoverPage() {
                         <button
                             type="button"
                             onClick={() => {
-                                setShowLikedOnly(!showLikedOnly);
+                                const newShowLikedOnly = !showLikedOnly;
+                                setShowLikedOnly(newShowLikedOnly);
+                                setShowSharedOnly(false); // 关闭"为您挑选"过滤
+
+                                // 如果选择"我喜欢"，清除款式和色系筛选
+                                if (newShowLikedOnly) {
+                                    setSelectedStyle('');
+                                    setSelectedColor('');
+                                }
                                 setShowStyleFilter(false);
                                 setShowColorFilter(false);
                             }}
@@ -497,6 +678,33 @@ export default function DiscoverPage() {
                             <span>我喜欢</span>
                         </button>
                     </div>
+
+                    {/* 为您挑选（分享过滤）- 只要URL中有分享ID就一直显示 */}
+                    {sharedProductIds.size > 0 && (
+                        <div className="relative flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const newShowSharedOnly = !showSharedOnly;
+                                    setShowSharedOnly(newShowSharedOnly);
+                                    setShowLikedOnly(false); // 关闭"我喜欢"过滤
+
+                                    // 如果选择"为您推荐"，清除款式和色系筛选
+                                    if (newShowSharedOnly) {
+                                        setSelectedStyle('');
+                                        setSelectedColor('');
+                                    }
+                                    setShowStyleFilter(false);
+                                    setShowColorFilter(false);
+                                }}
+                                className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium transition-colors ${showSharedOnly ? 'bg-pink-100 text-pink-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                <Share2 className="w-4 h-4" />
+                                <span>为您推荐</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </header>
 
@@ -504,13 +712,56 @@ export default function DiscoverPage() {
             <main className="px-4 py-4">
                 {/* AI推荐标题 */}
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900">为您精心挑选</h2>
-                    {loading && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
-                            <span>加载中...</span>
-                        </div>
-                    )}
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        {showSharedOnly ? '为您挑选' : '为您精心挑选'}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                        {showLikedOnly && likedProducts.size > 0 && (
+                            <>
+                                <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+                                    <button
+                                        onClick={() => setShowClearConfirm(true)}
+                                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                        aria-label="清除所有喜欢"
+                                    >
+                                        <Trash2 className="w-5 h-5 text-gray-500" />
+                                    </button>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>确认清除</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                确定要清除所有喜欢的花束吗？此操作无法撤销。
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>取消</AlertDialogCancel>
+                                            <AlertDialogAction onClick={clearAllLiked}>
+                                                确认清除
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                <button
+                                    onClick={handleGenerateShareImage}
+                                    disabled={isGeneratingShareImage}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+                                    aria-label="生成分享图"
+                                >
+                                    {isGeneratingShareImage ? (
+                                        <Loader2 className="w-5 h-5 text-pink-500 animate-spin" />
+                                    ) : (
+                                        <Share2 className="w-5 h-5 text-pink-500" />
+                                    )}
+                                </button>
+                            </>
+                        )}
+                        {loading && (
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                                <span>加载中...</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* 错误提示 */}
@@ -715,7 +966,74 @@ export default function DiscoverPage() {
                     </div>
                 </div>
             )}
+
+            {/* 分享图片预览模态框 */}
+            {showShareImage && shareImageUrl && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setShowShareImage(false)}
+                >
+                    <div
+                        className="relative bg-white rounded-2xl max-w-md w-full p-6"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* 关闭按钮 */}
+                        <button
+                            onClick={() => setShowShareImage(false)}
+                            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                            aria-label="关闭"
+                        >
+                            <X className="w-5 h-5 text-gray-600" />
+                        </button>
+
+                        {/* 分享图片 */}
+                        <div className="mb-4">
+                            <img
+                                src={shareImageUrl}
+                                alt="分享图片"
+                                className="w-full rounded-lg"
+                            />
+                        </div>
+
+                        {/* 操作按钮 */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={downloadShareImage}
+                                className="flex-1 bg-gradient-to-r from-rose-500 to-orange-400 text-white py-3 rounded-full font-semibold hover:opacity-90 transition-opacity"
+                            >
+                                保存图片
+                            </button>
+                            <button
+                                onClick={() => setShowShareImage(false)}
+                                className="px-6 py-3 border border-gray-300 rounded-full font-semibold hover:bg-gray-50 transition-colors"
+                            >
+                                取消
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-gray-500 text-center mt-4">
+                            保存图片后，可以发送给微信好友
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
+    );
+}
+
+// 主页面组件（包裹 Suspense）
+export default function DiscoverPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">加载中...</p>
+                </div>
+            </div>
+        }>
+            <DiscoverPageContent />
+        </Suspense>
     );
 }
 

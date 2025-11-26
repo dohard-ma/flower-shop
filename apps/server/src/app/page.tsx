@@ -338,7 +338,7 @@ function FooterSection({ theme }: FooterSectionProps) {
       </div>
       <div className="text-xs text-gray-400 leading-relaxed">
         客服微信：{theme.customerService}<br />
-        工作时间：9:00-21:00 · 全国配送
+        工作时间：8:00-22:00 · 深圳同城配送
       </div>
     </footer>
   );
