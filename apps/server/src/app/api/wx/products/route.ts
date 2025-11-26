@@ -23,7 +23,8 @@ const wxProductSchema = z.object({
   mediaList: z.array(z.object({
     type: z.enum(['image', 'video']),
     url: z.string().url()
-  })).default([])
+  })).default([]),
+  remark: z.string().optional() // 快速录入的原始文本
 });
 
 // GET: 获取产品列表
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, price, category, storeCode, mainFlower, colorScheme, targetAudience, quantity, style, stock, status, mediaList } = validation.data;
+    const { title, price, category, storeCode, mainFlower, colorScheme, targetAudience, quantity, style, stock, status, mediaList, remark } = validation.data;
 
     // 组装花材信息
     const materials: any[] = [];
@@ -109,7 +110,8 @@ export async function POST(request: NextRequest) {
       materials,
       stock: stock || undefined, // 库存数量
       status: mappedStatus,
-      sortOrder: 0
+      sortOrder: 0,
+      remark: remark || undefined // 快速录入的原始文本
     };
 
     const newProduct = await createProduct(productData);
@@ -213,6 +215,11 @@ export async function PUT(request: NextRequest) {
     if (data.colorScheme) descriptionParts.push(`颜色系列：${data.colorScheme}`);
     if (descriptionParts.length > 0) {
       updateData.description = descriptionParts.join('；');
+    }
+
+    // 处理快速录入的原始文本（remark）
+    if (data.remark !== undefined) {
+      updateData.remark = data.remark || undefined;
     }
 
     const updatedProduct = await updateProduct(id, updateData);

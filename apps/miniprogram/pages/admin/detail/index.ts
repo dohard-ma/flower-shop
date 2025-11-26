@@ -950,7 +950,9 @@ Page({
         mediaList: mediaList.map(item => ({
           type: item.type,
           url: item.url
-        }))
+        })),
+        // 如果使用了快速录入，将原始文本存储到 remark
+        remark: this.data.voiceText && this.data.voiceText.trim() ? this.data.voiceText.trim() : undefined
       };
 
       let result;
