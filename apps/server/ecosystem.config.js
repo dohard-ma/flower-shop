@@ -8,12 +8,12 @@ module.exports = {
             exec_mode: 'cluster',
             watch: false,
             env: {
-                PORT: 8082,
+                PORT: 8083,
                 NODE_ENV: 'production',
                 TZ: 'Asia/Shanghai',
             },
             env_production: {
-                PORT: 8082,
+                PORT: 8083,
                 NODE_ENV: 'production',
             },
             log_date_format: 'YYYY-MM-DD HH:mm:ss',
