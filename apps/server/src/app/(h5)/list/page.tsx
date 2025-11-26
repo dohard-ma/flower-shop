@@ -555,7 +555,7 @@ export default function DiscoverPage() {
                             >
                                 <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                                     {/* 商品图片 */}
-                                    <div className="relative aspect-[1/1] overflow-hidden">
+                                    <div className="relative aspect-[3/4] overflow-hidden">
                                         {product.images && product.images.length > 0 ? (
                                             <Image
                                                 src={processQiniuImageUrl(product.images[0], {
