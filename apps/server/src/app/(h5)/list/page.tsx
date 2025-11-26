@@ -155,6 +155,45 @@ function DiscoverPageContent() {
         setMounted(true);
     }, []);
 
+    // 标记是否正在初始化分享模式（用于防止初始加载在分享ID解析之前执行）
+    const isInitializingShared = useRef(false);
+
+    // 获取分享产品的独立函数
+    const fetchSharedProducts = useCallback(async (ids: string[]) => {
+        if (isLoadingRef.current) return;
+
+        try {
+            isLoadingRef.current = true;
+            setLoading(true);
+
+            const idsParam = ids.join(',');
+            const url = `/api/public/products?ids=${encodeURIComponent(idsParam)}`;
+            console.log('获取分享产品，URL:', url);
+
+            const response = await fetch(url);
+            const result: ApiResponse = await response.json();
+            console.log('分享产品API响应:', result);
+
+            if (result.success && result.data) {
+                const products = result.data.data || [];
+                console.log('获取到的分享产品:', products.length, products.map(p => ({ id: p.id, name: p.name })));
+                setProducts(products);
+                setCurrentPage(1);
+                setTotalPages(1);
+                setHasMore(false);
+            } else {
+                console.error('获取推荐产品失败，响应:', result);
+                setError('获取推荐产品失败');
+            }
+        } catch (err) {
+            console.error('Failed to fetch shared products:', err);
+            setError('获取推荐产品失败');
+        } finally {
+            setLoading(false);
+            isLoadingRef.current = false;
+        }
+    }, []);
+
     // 检查URL参数中的分享信息（只要URL中有分享ID，就一直显示为您推荐选项，并默认激活）
     const hasInitializedShared = useRef(false);
     useEffect(() => {
@@ -165,23 +204,30 @@ function DiscoverPageContent() {
             try {
                 const ids = sharedIds.split(',').filter(Boolean);
                 if (ids.length > 0) {
+                    console.log('解析分享ID:', ids);
+                    // 先设置状态
                     setSharedProductIds(new Set(ids));
-                    // 默认激活"为您推荐"筛选
                     setShowSharedOnly(true);
                     setShowLikedOnly(false);
-                    // 清除款式和色系筛选
                     setSelectedStyle('');
                     setSelectedColor('');
                     hasInitializedShared.current = true;
+
+                    // 然后立即获取分享的产品（不等待状态更新）
+                    fetchSharedProducts(ids);
                 }
             } catch (err) {
                 console.error('Failed to parse shared product IDs:', err);
             }
         } else if (!sharedIds) {
             // 如果URL中没有shared参数，重置标记
-            hasInitializedShared.current = false;
+            if (hasInitializedShared.current) {
+                hasInitializedShared.current = false;
+                setShowSharedOnly(false);
+                setSharedProductIds(new Set());
+            }
         }
-    }, [mounted, searchParams]);
+    }, [mounted, searchParams, fetchSharedProducts]);
 
     // 点击外部关闭下拉菜单
     useEffect(() => {
@@ -232,7 +278,7 @@ function DiscoverPageContent() {
         setShowClearConfirm(false);
     };
 
-    // 获取产品列表
+    // 获取产品列表（普通分页查询）
     const fetchProducts = useCallback(async (page: number = 1, append: boolean = false) => {
         // 防止重复请求
         if (isLoadingRef.current) {
@@ -300,11 +346,20 @@ function DiscoverPageContent() {
 
     // 初始加载和筛选条件变化时重置分页
     useEffect(() => {
+        if (!mounted) return;
+
+        // 如果选择了"我喜欢"或"为您推荐"，不执行普通加载（这些模式由按钮点击处理）
+        if (showLikedOnly || showSharedOnly) {
+            return;
+        }
+
+        // 普通模式：立即清空旧数据，然后加载所有产品（带筛选条件）
+        setProducts([]); // 清空旧数据，避免显示不匹配的内容
         setCurrentPage(1);
         setHasMore(true);
-        lastPageRequestedRef.current = 0; // 重置最后请求的页码
+        lastPageRequestedRef.current = 0;
         fetchProducts(1, false);
-    }, [fetchProducts]);
+    }, [mounted, fetchProducts, selectedStyle, selectedColor, searchQuery]);
 
     // 滚动加载更多
     useEffect(() => {
@@ -360,30 +415,44 @@ function DiscoverPageContent() {
         };
     }, [mounted, loading, loadingMore, hasMore, showLikedOnly, fetchProducts]);
 
-    // 过滤产品
+    // 过滤产品（支持叠加筛选）
     const filteredProducts = products.filter(product => {
-        // 先应用"我喜欢"或"为您推荐"筛选
-        if (showLikedOnly) {
-            if (!likedProducts.has(product.id)) return false;
-        } else if (showSharedOnly) {
-            if (!sharedProductIds.has(product.id)) return false;
+        // 第一层：数据源筛选
+        if (showLikedOnly && !likedProducts.has(product.id)) {
+            return false;
+        }
+        if (showSharedOnly && !sharedProductIds.has(product.id)) {
+            return false;
         }
 
-        // 如果选择了"我喜欢"或"为您推荐"，不应用款式和色系筛选
+        // 第二层：在推荐/喜欢模式下，应用款式和色系的前端过滤
+        // 在普通模式下，款式和色系由API处理，不需要前端过滤
         if (showLikedOnly || showSharedOnly) {
-            return true;
-        }
-
-        // 否则应用款式和色系筛选
-        if (selectedStyle && product.style !== selectedStyle) {
-            return false;
-        }
-        if (selectedColor && product.colorSeries !== selectedColor) {
-            return false;
+            // 款式筛选
+            if (selectedStyle && product.style !== selectedStyle) {
+                return false;
+            }
+            // 色系筛选
+            if (selectedColor && product.colorSeries !== selectedColor) {
+                return false;
+            }
         }
 
         return true;
     });
+
+    // 调试信息
+    useEffect(() => {
+        if (showSharedOnly && sharedProductIds.size > 0) {
+            console.log('分享筛选状态:', {
+                showSharedOnly,
+                sharedProductIds: Array.from(sharedProductIds),
+                productsCount: products.length,
+                filteredCount: filteredProducts.length,
+                productIds: products.map(p => p.id)
+            });
+        }
+    }, [showSharedOnly, sharedProductIds, products, filteredProducts]);
 
     // 生成分享图片
     const handleGenerateShareImage = async () => {
@@ -557,9 +626,12 @@ function DiscoverPageContent() {
                                     onClick={() => {
                                         setSelectedStyle('');
                                         setShowStyleFilter(false);
-                                        // 取消"我喜欢"和"为您推荐"
+                                        // 只取消"我喜欢"，保留"为您推荐"（允许叠加筛选）
                                         setShowLikedOnly(false);
-                                        setShowSharedOnly(false);
+                                        // 如果当前不在推荐/喜欢模式，需要清空并重新加载
+                                        if (!showSharedOnly && !showLikedOnly) {
+                                            setProducts([]);
+                                        }
                                     }}
                                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${!selectedStyle ? 'bg-pink-50 text-pink-600' : ''}`}
                                 >
@@ -571,9 +643,12 @@ function DiscoverPageContent() {
                                         onClick={() => {
                                             setSelectedStyle(style);
                                             setShowStyleFilter(false);
-                                            // 取消"我喜欢"和"为您推荐"
+                                            // 只取消"我喜欢"，保留"为您推荐"（允许叠加筛选）
                                             setShowLikedOnly(false);
-                                            setShowSharedOnly(false);
+                                            // 如果当前不在推荐/喜欢模式，需要清空并重新加载
+                                            if (!showSharedOnly && !showLikedOnly) {
+                                                setProducts([]);
+                                            }
                                         }}
                                         className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedStyle === style ? 'bg-pink-50 text-pink-600' : ''}`}
                                     >
@@ -620,9 +695,12 @@ function DiscoverPageContent() {
                                     onClick={() => {
                                         setSelectedColor('');
                                         setShowColorFilter(false);
-                                        // 取消"我喜欢"和"为您推荐"
+                                        // 只取消"我喜欢"，保留"为您推荐"（允许叠加筛选）
                                         setShowLikedOnly(false);
-                                        setShowSharedOnly(false);
+                                        // 如果当前不在推荐/喜欢模式，需要清空并重新加载
+                                        if (!showSharedOnly && !showLikedOnly) {
+                                            setProducts([]);
+                                        }
                                     }}
                                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${!selectedColor ? 'bg-pink-50 text-pink-600' : ''}`}
                                 >
@@ -634,9 +712,12 @@ function DiscoverPageContent() {
                                         onClick={() => {
                                             setSelectedColor(color);
                                             setShowColorFilter(false);
-                                            // 取消"我喜欢"和"为您推荐"
+                                            // 只取消"我喜欢"，保留"为您推荐"（允许叠加筛选）
                                             setShowLikedOnly(false);
-                                            setShowSharedOnly(false);
+                                            // 如果当前不在推荐/喜欢模式，需要清空并重新加载
+                                            if (!showSharedOnly && !showLikedOnly) {
+                                                setProducts([]);
+                                            }
                                         }}
                                         className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedColor === color ? 'bg-pink-50 text-pink-600' : ''}`}
                                     >
@@ -656,10 +737,19 @@ function DiscoverPageContent() {
                                 setShowLikedOnly(newShowLikedOnly);
                                 setShowSharedOnly(false); // 关闭"为您挑选"过滤
 
-                                // 如果选择"我喜欢"，清除款式和色系筛选
+                                // 选择"我喜欢"时，清除款式和色系筛选（重新开始）
+                                // 取消"我喜欢"时，保留筛选条件，让 useEffect 加载数据
                                 if (newShowLikedOnly) {
                                     setSelectedStyle('');
                                     setSelectedColor('');
+                                } else {
+                                    // 取消"我喜欢"，切换到普通模式
+                                    setProducts([]); // 清空旧数据
+                                    setCurrentPage(1);
+                                    setHasMore(true);
+                                    lastPageRequestedRef.current = 0;
+                                    // 使用当前的筛选条件加载数据
+                                    fetchProducts(1, false);
                                 }
                                 setShowStyleFilter(false);
                                 setShowColorFilter(false);
@@ -689,10 +779,21 @@ function DiscoverPageContent() {
                                     setShowSharedOnly(newShowSharedOnly);
                                     setShowLikedOnly(false); // 关闭"我喜欢"过滤
 
-                                    // 如果选择"为您推荐"，清除款式和色系筛选
                                     if (newShowSharedOnly) {
+                                        // 选择"为您推荐"：获取分享的产品（清空款式/色系）
                                         setSelectedStyle('');
                                         setSelectedColor('');
+                                        const ids = Array.from(sharedProductIds);
+                                        fetchSharedProducts(ids);
+                                    } else {
+                                        // 取消"为您推荐"：切换到普通模式
+                                        // 保留当前的款式/色系筛选，并重新加载数据
+                                        setProducts([]); // 清空旧数据
+                                        setCurrentPage(1);
+                                        setHasMore(true);
+                                        lastPageRequestedRef.current = 0;
+                                        // 使用当前的筛选条件加载数据
+                                        fetchProducts(1, false);
                                     }
                                     setShowStyleFilter(false);
                                     setShowColorFilter(false);
@@ -712,8 +813,8 @@ function DiscoverPageContent() {
             <main className="px-4 py-4">
                 {/* AI推荐标题 */}
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                        {showSharedOnly ? '为您挑选' : '为您精心挑选'}
+                    <h2 className="text-lg font-semibold text-gray-900 h-9">
+                        为您精心挑选
                     </h2>
                     <div className="flex items-center gap-2">
                         {showLikedOnly && likedProducts.size > 0 && (
