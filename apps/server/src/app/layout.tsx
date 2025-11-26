@@ -9,9 +9,8 @@ import type React from "react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "千礼挑一",
-  description: "千礼挑一后台管理",
-  generator: "v0.dev",
+  title: "花涧里",
+  description: "花涧里在线商城",
   icons: {
     icon: "/favicon.ico",
   },

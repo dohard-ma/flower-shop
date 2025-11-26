@@ -314,7 +314,7 @@ export function Sidebar() {
             >
               {!isCollapsed && (
                 <Link href='/' className='flex items-center font-semibold'>
-                  <span className='text-lg'>千礼挑一</span>
+                  <span className='text-lg'>花涧里</span>
                 </Link>
               )}
               <Button
