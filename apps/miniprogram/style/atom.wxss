@@ -1,400 +1,165 @@
-/* ==================================
-   1. Flex 布局体系 (Layout)
-   ================================== */
-.flex {
-  display: flex;
-}
-.flex-row {
-  display: flex;
-  flex-direction: row;
-}
-.flex-col {
-  display: flex;
-  flex-direction: column;
-}
-.flex-wrap {
-  flex-wrap: wrap;
-}
-.flex-1 {
-  flex: 1;
-}
-.flex-none {
-  flex: none;
-}
-
-/* 主轴对齐 */
-.justify-start {
-  justify-content: flex-start;
-}
-.justify-end {
-  justify-content: flex-end;
-}
-.justify-center {
-  justify-content: center;
-}
-.justify-between {
-  justify-content: space-between;
-} /* 常用：左右贴边 */
-.justify-around {
-  justify-content: space-around;
-} /* 常用：均分 */
-
-/* 交叉轴对齐 */
-.items-start {
-  align-items: flex-start;
-}
-.items-end {
-  align-items: flex-end;
-}
-.items-center {
-  align-items: center;
-} /* 最常用：垂直居中 */
-.items-stretch {
-  align-items: stretch;
-}
+/**
+ * 一人公司核心样式库 - atom.wxss
+ * 规范：1. 按分类存放 2. 数值升序排列 3. 严禁文件末尾堆砌
+ */
 
 /* ==================================
-        2. 间距体系 (Spacing)
-        核心理念：直接用 rpx 数值命名，所见即所得
-        ================================== */
-/* Margin (外边距) */
-.m-0 {
-  margin: 0 !important;
-}
-.mt-10 {
-  margin-top: 10rpx;
-}
-.mt-20 {
-  margin-top: 20rpx;
-}
-.mt-30 {
-  margin-top: 30rpx;
-}
-.mt-15 {
-  margin-top: 15rpx;
-}
-.mt-40 {
-  margin-top: 40rpx;
-}
+1. 布局体系 (Layout & Flex)
+================================== */
+.flex { display: flex; }
+.flex-row { display: flex; flex-direction: row; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; }
+.flex-none { flex: none; }
 
-.mb-10 {
-  margin-bottom: 10rpx;
-}
-.mb-15 {
-  margin-bottom: 15rpx;
-}
-.mb-20 {
-  margin-bottom: 20rpx;
-}
-.mb-30 {
-  margin-bottom: 30rpx;
-}
-.mb-40 {
-  margin-bottom: 40rpx;
-}
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.items-center { align-items: center; }
+.items-stretch { align-items: stretch; }
 
-.ml-10 {
-  margin-left: 10rpx;
-}
-.ml-20 {
-  margin-left: 20rpx;
-}
-.mr-10 {
-  margin-right: 10rpx;
-}
-.mr-20 {
-  margin-right: 20rpx;
-}
-
-/* Padding (内边距) */
-.p-0 {
-  padding: 0 !important;
-}
-.p-20 {
-  padding: 20rpx;
-} /* 卡片常用内边距 */
-.p-30 {
-  padding: 30rpx;
-}
-
-.pt-20 {
-  padding-top: 20rpx;
-}
-.pt-30 {
-  padding-top: 30rpx;
-}
-.pb-20 {
-  padding-bottom: 20rpx;
-}
-.pb-30 {
-  padding-bottom: 30rpx;
-}
-.pl-10 {
-  padding-left: 10rpx;
-}
-.pl-20 {
-  padding-left: 20rpx;
-}
-.pl-30 {
-  padding-left: 30rpx;
-}
-.px-5 {
-  padding-left: 5rpx;
-  padding-right: 5rpx;
-}
-.px-20 {
-  padding-left: 20rpx;
-  padding-right: 20rpx;
-} /* 左右内边距 */
-.px-30 {
-  padding-left: 30rpx;
-  padding-right: 30rpx;
-} /* 左右内边距 */
-.py-20 {
-  padding-top: 20rpx;
-  padding-bottom: 20rpx;
-} /* 上下内边距 */
-.py-30 {
-  padding-top: 30rpx;
-  padding-bottom: 30rpx;
-} /* 上下内边距 */
-.py-100 {
-  padding-top: 100rpx;
-  padding-bottom: 100rpx;
-}
-
-/* Gap (Flex子元素间距 - iOS 14.5+ 支持，小程序已基本支持) */
-.gap-10 {
-  gap: 10rpx;
-}
-.gap-20 {
-  gap: 20rpx;
-}
-.gap-30 {
-  gap: 30rpx;
-}
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); }
 
 /* ==================================
-        3. 视觉装饰 (Visual)
-        ================================== */
-/* 背景色 */
-.bg-white {
-  background-color: #ffffff;
-}
-.bg-gray {
-  background-color: #f7f7f7;
-} /* 常用底色 */
-.bg-mask {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-.bg-333 {
-  background-color: #333333;
-}
+  2. 间距体系 (Spacing)
+  ================================== */
+.m-0 { margin: 0 !important; }
+.mt-4 { margin-top: 4rpx; }
+.mt-5 { margin-top: 5rpx; }
+.mt-10 { margin-top: 10rpx; }
+.mt-15 { margin-top: 15rpx; }
+.mt-20 { margin-top: 20rpx; }
+.mt-30 { margin-top: 30rpx; }
+.mt-40 { margin-top: 40rpx; }
 
-/* 圆角 */
-.rounded-sm {
-  border-radius: 8rpx;
-}
-.rounded-md {
-  border-radius: 16rpx;
-} /* 卡片标准圆角 */
-.rounded-lg {
-  border-radius: 24rpx;
-}
-.rounded-full {
-  border-radius: 9999rpx;
-} /* 胶囊/圆形 */
-.overflow-hidden {
-  overflow: hidden;
-}
+.mb-4 { margin-bottom: 4rpx; }
+.mb-5 { margin-bottom: 5rpx; }
+.mb-10 { margin-bottom: 10rpx; }
+.mb-15 { margin-bottom: 15rpx; }
+.mb-20 { margin-bottom: 20rpx; }
+.mb-30 { margin-bottom: 30rpx; }
+.mb-40 { margin-bottom: 40rpx; }
+.mb-60 { margin-bottom: 60rpx; }
 
-/* ==================================
-        4. 字体排版 (Typography)
-        ================================== */
-.font-500 {
-  font-weight: 500;
-}
-.font-bold {
-  font-weight: bold;
-}
-.text-xs {
-  font-size: 20rpx;
-}
-/* 标签 */
-.text-sm {
-  font-size: 24rpx;
-}
-/* 次要信息 */
-.text-base {
-  font-size: 28rpx;
-}
-/* 正文 */
-.text-lg {
-  font-size: 32rpx;
-}
-/* 小标题 */
-.text-xl {
-  font-size: 36rpx;
-}
-/* 大标题 */
-.text-2xl {
-  font-size: 48rpx;
-}
-/* 价格/特大数 */
+.ml-5 { margin-left: 5rpx; }
+.ml-10 { margin-left: 10rpx; }
+.ml-20 { margin-left: 20rpx; }
+.mr-5 { margin-right: 5rpx; }
+.mr-10 { margin-right: 10rpx; }
+.mr-20 { margin-right: 20rpx; }
 
-/* 字重 */
-.font-normal {
-  font-weight: normal;
-}
+.p-0 { padding: 0 !important; }
+.p-4 { padding: 4rpx; }
+.p-20 { padding: 20rpx; }
+.p-30 { padding: 30rpx; }
+.p-40 { padding: 40rpx; }
 
-/* 颜色 (建议提取为 CSS 变量，但在原子类里先写死) */
-.text-333 {
-  color: #333333;
-} /* 主标题黑 */
-.text-666 {
-  color: #666666;
-} /* 正文灰 */
-.text-999 {
-  color: #999999;
-} /* 辅助灰 */
-.text-white {
-  color: #ffffff;
-}
-.text-price {
-  color: #ff4d4f;
-} /* 价格红 */
-.text-brand {
-  color: #07c160;
-} /* 品牌色(示例) */
+.px-5 { padding-left: 5rpx; padding-right: 5rpx; }
+.px-12 { padding-left: 12rpx; padding-right: 12rpx; }
+.px-20 { padding-left: 20rpx; padding-right: 20rpx; }
+.px-30 { padding-left: 30rpx; padding-right: 30rpx; }
 
-/* 文本处理 */
-.text-center {
-  text-align: center;
-}
-.text-right {
-  text-align: right;
-}
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-} /* 单行省略 */
+.py-4 { padding-top: 4rpx; padding-bottom: 4rpx; }
+.py-20 { padding-top: 20rpx; padding-bottom: 20rpx; }
+.py-25 { padding-top: 25rpx; padding-bottom: 25rpx; }
+.py-30 { padding-top: 30rpx; padding-bottom: 30rpx; }
+.py-100 { padding-top: 100rpx; padding-bottom: 100rpx; }
+
+.gap-10 { gap: 10rpx; }
+.gap-15 { gap: 15rpx; }
+.gap-20 { gap: 20rpx; }
+.gap-30 { gap: 30rpx; }
+.gap-40 { gap: 40rpx; }
 
 /* ==================================
-        5. 定位与杂项 (Position & Misc)
-        ================================== */
-.relative {
-  position: relative;
-}
-.absolute {
-  position: absolute;
-}
-.fixed {
-  position: fixed;
-}
-.full-w {
-  width: 100%;
-}
-.full-h {
-  height: 100%;
-}
+  3. 视觉装饰 (Visual)
+  ================================== */
+.bg-white { background-color: #ffffff; }
+.bg-gray { background-color: #f7f7f7; }
+.bg-f5 { background-color: #f5f5f5; }
+.bg-333 { background-color: #333333; }
+.bg-mask { background-color: rgba(0, 0, 0, 0.5); }
+.bg-white-10 { background: rgba(255, 255, 255, 0.1); }
 
-/* 视口级全屏 (Viewport) - 只有做全屏遮罩/弹窗时才用 */
-.w-screen {
-  width: 100vw;
-}
-.h-screen {
-  height: 100vh;
-}
+.rounded-sm { border-radius: 8rpx; }
+.rounded-md { border-radius: 16rpx; }
+.rounded-lg { border-radius: 24rpx; }
+.rounded-full { border-radius: 9999rpx; }
+.overflow-hidden { overflow: hidden; }
 
-/* === 新增：微调间距 (5rpx) === */
-/* AI 很喜欢用 5rpx 做微调，不如直接收编它 */
-.mt-5 {
-  margin-top: 5rpx;
-}
-.ml-5 {
-  margin-left: 5rpx;
-}
-.mr-5 {
-  margin-right: 5rpx;
-}
-.mb-5 {
-  margin-bottom: 5rpx;
-}
-.px-5 {
-  padding-left: 5rpx;
-  padding-right: 5rpx;
-}
+.border-1 { border: 1rpx solid #f0f0f0; }
+.border-t { border-top: 1rpx solid #f0f0f0; }
+.border-b { border-bottom: 1rpx solid #f0f0f0; }
 
-/* === 新增：通用边框 (Border) === */
-.border-b {
-  border-bottom: 1rpx solid #f0f0f0;
-}
-.border-t {
-  border-top: 1rpx solid #f0f0f0;
-}
-.border-1 {
-  border: 1rpx solid #f0f0f0;
-}
+/* ==================================
+  4. 字体排版 (Typography)
+  ================================== */
+.font-normal { font-weight: normal; }
+.font-500 { font-weight: 500; }
+.font-bold { font-weight: bold; }
 
-/* === 修正：别名兼容 (AI 经常搞混 full-h 和 h-full，不如两个都写上) === */
-.h-full {
-  height: 100%;
-}
+.text-xs { font-size: 20rpx; }
+.text-sm { font-size: 24rpx; }
+.text-base { font-size: 28rpx; }
+.text-lg { font-size: 32rpx; }
+.text-xl { font-size: 36rpx; }
+.text-2xl { font-size: 48rpx; }
 
-/* === 新增：宽度类 === */
-.w-200 {
-  width: 200rpx;
-}
-.w-340 {
-  width: 340rpx;
-}
-.w-48p {
-  width: 48%;
-}
+.text-333 { color: #333333; }
+.text-666 { color: #666666; }
+.text-999 { color: #999999; }
+.text-gray { color: #6b7280; }
+.text-white { color: #ffffff; }
+.text-price { color: #ff4d4f; }
+.text-brand { color: #07c160; }
 
-/* === 新增：高度类 === */
-.h-40 {
-  height: 40rpx;
-}
-.h-100 {
-  height: 100rpx;
-}
-.h-340 {
-  height: 340rpx;
-}
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* === 新增：圆角补充 === */
-.rounded-tr-sm {
-  border-radius: 0 4rpx 4rpx 0;
-}
+/* ==================================
+  5. 尺寸与定位 (Sizing & Position)
+  ================================== */
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed { position: fixed; }
 
-/* === 新增：定位和变形 === */
-.top-50p {
-  top: 50%;
-}
-.left-0 {
-  left: 0;
-}
-.transform-y-50 {
-  transform: translateY(-50%);
-}
+.full-w { width: 100%; }
+.full-h { height: 100%; }
+.h-full { height: 100%; }
+.w-screen { width: 100vw; }
+.h-screen { height: 100vh; }
 
-/* === 新增：尺寸类 === */
-.w-6 {
-  width: 6rpx;
-}
-.h-28 {
-  height: 28rpx;
-  line-height: 28rpx;
-}
+.w-4 { width: 4rpx; }
+.w-6 { width: 6rpx; }
+.w-48 { width: 48rpx; }
+.w-128 { width: 128rpx; }
+.w-200 { width: 200rpx; }
+.w-340 { width: 340rpx; }
+.w-48p { width: 48%; }
 
-/* === 新增：字体大小补充 === */
-.text-14 {
-  font-size: 14rpx;
-}
+.h-4 { height: 4rpx; }
+.h-8 { height: 8rpx; }
+.h-28 { height: 28rpx; line-height: 28rpx; }
+.h-40 { height: 40rpx; }
+.h-48 { height: 48rpx; }
+.h-100 { height: 100rpx; }
+.h-128 { height: 128rpx; }
+.h-340 { height: 340rpx; }
 
-/* === 新增：内边距补充 === */
-.p-2-8 {
-  padding: 2rpx 8rpx;
-}
+/* ==================================
+  ⚠️ 待废弃/非标样式 (Deprecated)
+  ================================== */
+.p-2-8 { padding: 2rpx 8rpx; }
+.rounded-tr-sm { border-radius: 0 4rpx 4rpx 0; }
+.top-50p { top: 50%; }
+.left-0 { left: 0; }
+.transform-y-50 { transform: translateY(-50%); }
+.text-white-40 { color: rgba(255, 255, 255, 0.4); }
+.text-white-80 { color: rgba(255, 255, 255, 0.8); }
+.text-white-90 { color: rgba(255, 255, 255, 0.9); }

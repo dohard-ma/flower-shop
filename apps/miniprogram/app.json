@@ -8,7 +8,8 @@
         "pages/admin/upload/index",
         "pages/webview/index",
         "pages/admin/products/index",
-        "pages/admin/detail/index"
+        "pages/admin/detail/index",
+        "pages/admin/categories/index"
     ],
     "tabBar": {
         "color": "#999999",
@@ -19,26 +20,26 @@
             {
                 "text": "首页",
                 "pagePath": "pages/home/index",
-                "iconPath": "./assets/icons/home-2-line.png",
-                "selectedIconPath": "./assets/icons/home-2-fill.png"
+                "iconPath": "./assets/remix/home-2-line.png",
+                "selectedIconPath": "./assets/remix/home-2-fill.png"
             },
             {
                 "text": "分类",
                 "pagePath": "pages/category/index",
-                "iconPath": "./assets/icons/store-2-line.png",
-                "selectedIconPath": "./assets/icons/store-2-fill.png"
+                "iconPath": "./assets/remix/store-2-line.png",
+                "selectedIconPath": "./assets/remix/store-2-fill.png"
             },
             {
                 "text": "购物车",
                 "pagePath": "pages/cart/index",
-                "iconPath": "./assets/icons/shopping-cart-line.png",
-                "selectedIconPath": "./assets/icons/shopping-cart-fill.png"
+                "iconPath": "./assets/remix/shopping-cart-line.png",
+                "selectedIconPath": "./assets/remix/shopping-cart-fill.png"
             },
             {
                 "text": "我的",
                 "pagePath": "pages/user/index",
-                "iconPath": "./assets/icons/user-5-line.png",
-                "selectedIconPath": "./assets/icons/user-5-fill.png"
+                "iconPath": "./assets/remix/user-5-line.png",
+                "selectedIconPath": "./assets/remix/user-5-fill.png"
             }
         ]
     },

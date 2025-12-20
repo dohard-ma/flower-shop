@@ -1,11 +1,80 @@
 <view class="container">
-  <view class="header">
-    <view class="header-title">
-      <text>商品列表</text>
+    <!-- 任务列表 -->
+    <view class="task-list">
+        <view class="task-item" wx:for="{{uploadTasks}}" wx:key="id" data-item="{{item}}" data-task-id="{{item.id}}" bindtap="onTaskItemTap" data-index="{{index}}">
+            <!-- 复选框（始终显示） -->
+            <view class="checkbox-container" catchtap="onCheckboxTap" data-task-id="{{item.id}}">
+                <checkbox value="{{item.id}}" checked="{{item.selected}}" />
+            </view>
+            <!-- 图片缩略图 -->
+            <view class="image-container">
+                <image src="{{item.image}}" mode="aspectFill" class="thumbnail" />
+            </view>
+            <!-- 任务信息 -->
+            <view class="task-info">
+                <!-- 标题和状态 -->
+                <view class="title-row">
+                    <view class="title">{{ item.title || '处理中...'  }}</view>
+                    <view class="status-text {{item.status}}">
+                        <text wx:if="{{item.status === 'uploading'}}">上传中</text>
+                        <text wx:if="{{item.status === 'analyzing'}}">AI分析中</text>
+                        <text wx:if="{{item.status === 'pending'}}">待确认</text>
+                        <text wx:if="{{item.status === 'confirmed'}}">已确认</text>
+                        <text wx:if="{{item.status === 'failed'}}">处理失败</text>
+                    </view>
+                </view>
+                <!-- 价格和分类 -->
+                <view class="detail-row" wx:if="{{item.title}}">
+                    <view class="price">¥{{item.price || '0.00'}}</view>
+                    <view class="category" wx:if="{{item.category}}">{{item.category}}</view>
+                </view>
+                <!-- 错误信息 -->
+                <view class="error-message" wx:if="{{item.status === 'failed' && item.error}}">
+                    <text class="error-text">{{item.error}}</text>
+                </view>
+            </view>
+            <!-- 操作区域 -->
+            <view class="action-area">
+                <!-- 可编辑状态显示箭头 -->
+                <view class="arrow" wx:if="{{item.status === 'pending' || item.status === 'confirmed'}}">
+                    <text class="arrow-icon">
+                        <image src="/assets/icons/arrow-right.svg" mode="aspectFill" class="arrow-icon-image" />
+                    </text>
+                </view>
+            </view>
+        </view>
+        <!-- 空状态 -->
+        <view class="empty-state" wx:if="{{!uploadTasks || uploadTasks.length === 0}}">
+            <text class="empty-icon">📸</text>
+            <text class="empty-text">还没有上传任务</text>
+            <text class="empty-desc">点击下方按钮开始批量上传图片</text>
+        </view>
     </view>
-    <!-- 新增按钮 -->
-    <view class="add-button">
-      <text>新增</text>
+    <view class="footer">
+        <!-- 有选中项时显示批量操作按钮 -->
+        <view class="batch-actions" wx:if="{{selectedTasks.length > 0}}">
+            <view class="batch-btn cancel-btn" bindtap="clearSelection">
+                <text class="btn-text">取消</text>
+            </view>
+            <view class="batch-btn delete-btn" bindtap="onBatchDelete">
+                <text class="btn-text">删除 ({{selectedTasks.length}})</text>
+            </view>
+            <view class="batch-btn analyze-btn" bindtap="onBatchReanalyze">
+                <text class="btn-text">重新分析 ({{selectedTasks.length}})</text>
+            </view>
+        </view>
+        <!-- 无选中项时显示正常按钮组 -->
+        <view class="button-group" wx:else>
+            <!-- AI分析开关按钮 -->
+            <view class="ai-toggle-button {{aiAnalysisEnabled ? 'enabled' : 'disabled'}}" bindtap="toggleAIAnalysis">
+                <text class="ai-icon">{{aiAnalysisEnabled ? '🤖' : '🚫'}}</text>
+                <text class="ai-text">{{aiAnalysisEnabled ? 'AI分析已开启' : 'AI分析已关闭'}}</text>
+            </view>
+            <!-- 批量上传按钮 -->
+            <view class="add-button" bindtap="onAddProduct">
+                <text class="add-icon">📷</text>
+                <text class="add-text">批量上传图片</text>
+            </view>
+        </view>
     </view>
-  </view>
 </view>

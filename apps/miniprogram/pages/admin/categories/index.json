@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "分类管理",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-dialog": "tdesign-miniprogram/dialog/dialog",
+    "t-switch": "tdesign-miniprogram/switch/switch",
+    "t-input": "tdesign-miniprogram/input/input"
+  }
+}

@@ -1,3 +1,62 @@
-<view>
-    <view bind:tap="onProductManagement">商品管理</view>
+<view class="bg-gray pb-100">
+    <!-- 1. 用户信息主卡片 -->
+    <view class="px-30 pt-30 pb-20">
+        <profile-card userInfo="{{userInfo}}" levelInfo="{{levelInfo}}" bind:edit="onEdit" />
+    </view>
+    <!-- 2. 后台管理 -->
+    <view class="px-30 mb-20">
+        <view class="card-round">
+            <view class="px-30 py-25">
+                <text class="text-lg font-bold text-333">后台管理</text>
+            </view>
+            <view class="grid-4 gap-40 px-20 pb-40">
+                <view wx:for="{{adminList}}" wx:key="type" class="flex-col items-center" bind:tap="onAdmin" data-type="{{item.type}}">
+                    <view class="icon-round">
+                        <t-icon name="{{item.icon}}" size="20" />
+                    </view>
+                    <text class="text-xs text-666 mt-10">{{item.title}}</text>
+                </view>
+            </view>
+        </view>
+    </view>
+    <!-- 3. 订单中心 -->
+    <view class="px-30 mb-20">
+        <view class="card-round">
+            <view class="flex justify-between items-center px-30 py-25">
+                <text class="text-lg font-bold text-333">订单中心</text>
+                <view class="flex items-center text-999 text-xs" bind:tap="onAllOrders">
+                    <text class="text-sm">全部订单</text>
+                    <t-icon name="chevron-right" size="20" />
+                </view>
+            </view>
+            <view class="flex justify-around px-20 pb-40">
+                <view wx:for="{{orderStatus}}" wx:key="type" class="flex-col items-center" bind:tap="onOrderStatus" data-type="{{item.type}}">
+                    <view class="icon-round">
+                        <t-icon name="{{item.icon}}" size="20" />
+                    </view>
+                    <text class="text-xs text-666 mt-10">{{item.title}}</text>
+                </view>
+            </view>
+        </view>
+    </view>
+    <!-- 4. 花友服务 -->
+    <view class="px-30 mb-20">
+        <view class="card-round">
+            <view class="px-30 py-25">
+                <text class="text-lg font-bold text-333">花友服务</text>
+            </view>
+            <view class="grid-4 gap-40 px-20 pb-40">
+                <view wx:for="{{serviceList}}" wx:key="type" class="flex-col items-center" bind:tap="onService" data-type="{{item.type}}">
+                    <view class="icon-round">
+                        <t-icon name="{{item.icon}}" size="20" />
+                    </view>
+                    <text class="text-xs text-666 mt-10">{{item.title}}</text>
+                </view>
+            </view>
+        </view>
+    </view>
+    <!-- 5. 客服导流 Banner -->
+    <view class="px-30 mb-60">
+        <service-banner bind:contact="onContactService" />
+    </view>
 </view>

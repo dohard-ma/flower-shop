@@ -1,0 +1,66 @@
+/* 导入全局原子样式 */
+@import '/style/atom.wxss';
+
+/* ProfileCard 组件样式 */
+
+/* 深色渐变背景 */
+.profile-gradient {
+  background: linear-gradient(145deg, #1a1a1a 0%, #2c2c2c 100%);
+  box-shadow: 0 40rpx 80rpx -30rpx rgba(0, 0, 0, 0.2);
+}
+
+/* 头像环（带毛玻璃效果） */
+.avatar-ring {
+  width: 144rpx;
+  height: 144rpx;
+  border-radius: 9999rpx;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20rpx);
+  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 头像徽章 */
+.avatar-badge {
+  position: absolute;
+  bottom: -4rpx;
+  right: -4rpx;
+  width: 48rpx;
+  height: 48rpx;
+  background: #10b981;
+  border: 4rpx solid #1a1a1a;
+  border-radius: 9999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 等级徽章 */
+.user-level {
+  background: rgba(234, 179, 8, 0.2);
+  border: 2rpx solid rgba(234, 179, 8, 0.3);
+  border-radius: 4rpx;
+  padding: 2rpx 8rpx;
+  color: #eab308;
+  letter-spacing: 2rpx;
+}
+
+/* 编辑图标 */
+.edit-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 9999rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 进度条填充（渐变效果） */
+.progress-fill {
+  background: linear-gradient(90deg, #ffffff, #dddddd);
+  box-shadow: 0 0 20rpx rgba(255, 255, 255, 0.3);
+}

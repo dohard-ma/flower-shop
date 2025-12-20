@@ -1,0 +1,44 @@
+<view class="profile-gradient rounded-lg overflow-hidden">
+    <!-- 顶部：头像与核心信息 -->
+    <view class="p-40">
+        <view class="flex items-center justify-between mb-40">
+            <view class="flex items-center gap-20">
+                <!-- 头像 -->
+                <view class="relative">
+                    <view class="avatar-ring p-4">
+                        <image src="{{userInfo.avatar}}" class="w-128 h-128 rounded-full" mode="aspectFill" />
+                    </view>
+                    <view class="avatar-badge">
+                        <text class="text-white text-xs">{{userInfo.badge}}</text>
+                    </view>
+                </view>
+                <!-- 用户信息 -->
+                <view>
+                    <view class="flex items-center gap-10 mb-4">
+                        <text class="text-xl font-bold text-white">{{userInfo.nickname}}</text>
+                        <view class="user-level">
+                            <text class="text-xs font-bold">{{userInfo.level}}</text>
+                        </view>
+                    </view>
+                    <text class="text-xs text-white-40">ID: {{userInfo.userId}}</text>
+                </view>
+            </view>
+            <!-- 编辑按钮 -->
+            <view class="edit-icon" bind:tap="onEdit">
+                <text class="text-white-80 text-lg">✏️</text>
+            </view>
+        </view>
+        <!-- 等级进度 -->
+        <!-- <view class="mb-30">
+            <view class="flex justify-between items-center mb-10">
+                <text class="text-xs font-bold text-white-90">{{levelInfo.title}}</text>
+                <text class="text-xs text-white-40">
+                    成长值 {{levelInfo.current}} / {{levelInfo.total}}
+                </text>
+            </view>
+            <view class="h-8 bg-white-10 rounded-sm overflow-hidden">
+                <view class="progress-fill h-full" style="width: {{levelInfo.percent}}%;"></view>
+            </view>
+        </view> -->
+    </view>
+</view>

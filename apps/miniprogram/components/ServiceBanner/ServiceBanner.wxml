@@ -1,0 +1,14 @@
+<view class="banner-gradient rounded-lg flex items-center justify-between p-30" bind:tap="onContact">
+    <view class="flex items-center gap-20">
+        <view class="wechat-icon">
+            <t-image src="/assets/iconfont/wechat.png" width="96rpx" height="96rpx" />
+        </view>
+        <view class="flex-1">
+            <view class="text-base font-bold text-333 mb-4">{{title}}</view>
+            <view class="text-xs text-brand mt-5">{{description}}</view>
+        </view>
+    </view>
+    <t-button theme="primary" size="extra-small" shape="round" style="margin: 0">
+        {{buttonText}}
+    </t-button>
+</view>

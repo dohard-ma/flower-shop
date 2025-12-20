@@ -1,0 +1,17 @@
+/* 导入全局原子样式 */
+@import '/style/atom.wxss';
+
+/* ServiceBanner 组件样式 */
+
+/* 客服 Banner 渐变 */
+.banner-gradient {
+  background: linear-gradient(90deg, #e8f5e9 0%, #ffffff 100%);
+  border: 2rpx solid #dcfce7;
+  box-shadow: 0 20rpx 60rpx -20rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 微信图标样式 */
+.wechat-icon {
+  width: 96rpx;
+  height: 96rpx;
+}

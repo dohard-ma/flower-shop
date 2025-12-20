@@ -1,0 +1,22 @@
+/* ========================================
+   页面级样式 - 仅保留通用装饰
+   ======================================== */
+
+/* 小米风格超大圆角卡片 */
+.card-round {
+  background: #ffffff;
+  border-radius: 20rpx;
+  box-shadow: 0 20rpx 20rpx -20rpx rgba(0, 0, 0, 0.04);
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+}
+
+/* 圆形图标容器 */
+.icon-round {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+}

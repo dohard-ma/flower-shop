@@ -50,7 +50,7 @@
                 <view class="flex-row items-center">
                   <text class="text-xs font-bold text-333">¥</text>
                   <text class="text-lg font-bold text-333 ml-5">{{item.price}}</text>
-                  <view wx:if="{{item.vip}}" class="ml-10 bg-333 text-white rounded-sm flex items-center justify-center text-14 p-2-8 h-28">
+                  <view wx:if="{{item.vip}}" class="ml-10 bg-333 text-white rounded-sm flex items-center justify-center text-sm p-2-8 h-28">
                     VIP
                   </view>
                 </view>

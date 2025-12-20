@@ -40,3 +40,5 @@ apps/server/out
 apps/server/build
 apps/server/dist
 apps/server/exports
+
+apps\miniprogram\`miniprogram_npm`

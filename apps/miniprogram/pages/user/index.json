@@ -1,1 +1,7 @@
-{}
+{
+  "usingComponents": {
+    "profile-card": "/components/ProfileCard/ProfileCard",
+    "service-banner": "/components/ServiceBanner/ServiceBanner",
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
+}

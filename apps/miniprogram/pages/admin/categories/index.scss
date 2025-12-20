@@ -1,0 +1,16 @@
+// 分类管理页面使用原子类布局
+@import "../../../style/common.wxss";
+
+// 拖拽悬停样式
+.drag-over {
+  background-color: #f0f9ff !important;
+  border-left: 4rpx solid #0052d9;
+}
+
+// 内联编辑输入框
+.input-edit {
+  border: 2rpx solid #0052d9;
+  border-radius: 8rpx;
+  padding: 10rpx 20rpx;
+  background-color: #fff;
+}
