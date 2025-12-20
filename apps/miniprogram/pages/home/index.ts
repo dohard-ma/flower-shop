@@ -6,10 +6,10 @@ Page({
     searchValue: '',
     currentSwiperIndex: 0,
     swiperList: [
-      'https://tdesign.gtimg.com/mobile/demos/swiper1.png',
-      'https://tdesign.gtimg.com/mobile/demos/swiper2.png',
-      'https://tdesign.gtimg.com/mobile/demos/swiper3.png',
-      'https://tdesign.gtimg.com/mobile/demos/swiper4.png',
+      'https://static.laohuoji.link/huajianli/products/images/b5ba45d8-5c2f-4bfa-975c-3f289242af02.jpg',
+      'https://static.laohuoji.link/huajianli/products/images/b5ba45d8-5c2f-4bfa-975c-3f289242af02.jpg',
+      'https://static.laohuoji.link/huajianli/products/images/b5ba45d8-5c2f-4bfa-975c-3f289242af02.jpg',
+      'https://static.laohuoji.link/huajianli/products/images/b5ba45d8-5c2f-4bfa-975c-3f289242af02.jpg',
     ]
   },
 

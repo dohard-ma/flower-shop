@@ -1,1 +1,8 @@
-{}
+{
+  "usingComponents": {
+    "t-search": "tdesign-miniprogram/search/search",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  },
+  "navigationBarTitleText": "分类"
+}

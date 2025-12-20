@@ -1,0 +1,13 @@
+@import '../../style/common.wxss';
+
+/* === 新增：特殊效果 === */
+/* 子项激活下划线（用于二级分类选中效果） */
+.child-active-line::after {
+  content: "";
+  position: absolute;
+  left: 30rpx;
+  bottom: -6rpx;
+  width: calc(100% - 30rpx);
+  height: 3rpx;
+  background-color: #333333;
+}

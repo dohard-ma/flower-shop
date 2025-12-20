@@ -1,1 +1,3 @@
-<view></view>
+<view>
+    <view bind:tap="onProductManagement">商品管理</view>
+</view>
