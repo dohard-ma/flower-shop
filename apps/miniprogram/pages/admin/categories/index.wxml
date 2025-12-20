@@ -1,84 +1,40 @@
-<view class="flex-col bg-f5 full-h">
-  <!-- 分类列表 -->
-  <view class="flex-1 pb-100">
+<view class="flex-col bg-f5 h-screen">
+  <scroll-view scroll-y class="flex-1 pb-128">
     <view class="flex-col">
-      <view wx:for="{{flatList}}" wx:key="_id" class="flex-row items-center bg-white border-b {{dragOverIndex === index ? 'drag-over' : ''}}" style="padding-left: {{item.indent * 60 + 30}}rpx; padding-right: 30rpx; padding-top: 30rpx; padding-bottom: 30rpx;" data-index="{{index}}" data-id="{{item._id}}" bindlongpress="onDragStart" bindtouchmove="onDragOver" bindtouchend="onDrop" bindtouchcancel="onDragEnd">
-        <!-- 拖拽手柄 -->
-        <view class="flex items-center justify-center mr-20">
-          <t-icon name="drag" size="40rpx" color="#999" />
-        </view>
-        <!-- 展开/收起图标 (仅一级且有子分类) -->
-        <view wx:if="{{item.hasChildren}}" class="flex items-center justify-center w-48 h-48 mr-10" data-id="{{item._id}}" catchtap="onToggleExpand">
-          <t-icon name="{{item.expanded ? 'chevron-down' : 'chevron-right'}}" size="40rpx" color="#666" />
-        </view>
-        <view wx:else class="w-48 mr-10"></view>
-        <!-- 层级指示器 -->
-        <view wx:if="{{item.indent > 0}}" class="flex items-center mr-10">
-          <view class="w-4 h-4 rounded-full bg-999"></view>
-        </view>
-        <!-- 分类名称 (支持内联编辑) -->
-        <view class="flex-1 flex-col">
-          <view wx:if="{{editingId === item._id}}" class="flex-row items-center">
-            <input class="flex-1 text-lg font-bold text-333 input-edit" value="{{dialogInputValue}}" bindinput="onInputChange" focus="{{true}}" />
-            <view class="flex-row items-center gap-10 ml-20">
-              <view class="flex items-center justify-center w-60 h-60" data-id="{{item._id}}" catchtap="onSaveEdit">
-                <t-icon name="check" size="40rpx" color="#07c160" />
-              </view>
-              <view class="flex items-center justify-center w-60 h-60" catchtap="onCancelEdit">
-                <t-icon name="close" size="40rpx" color="#999" />
-              </view>
+      <view wx:for="{{flatList}}" wx:key="_id"
+            class="flex-row items-center bg-white border-b mb-2 {{item.indent > 0 ? 'bg-f5' : ''}}"
+            style="padding-left: {{item.indent * 40 + 40}}rpx; padding-right: 40rpx;">
+
+        <view wx:if="{{item.indent > 0}}" class="w-4 h-28 bg-brand mr-20 rounded-full"></view>
+
+        <view class="flex-1 py-30 flex-row items-center">
+          <view class="flex-1 flex-col">
+            <view class="flex-row items-center">
+              <text class="text-lg font-500 text-333">{{item.name}}</text>
+              <text class="text-xs text-999 ml-20">{{item.productCount}}件商品</text>
             </view>
           </view>
-          <view wx:else class="flex-row items-center">
-            <text class="text-lg font-bold text-333" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onStartEdit">
-              {{item.name}}
-            </text>
-            <view class="flex-row items-center ml-20">
-              <!-- 商品数量标签 -->
-              <view class="px-12 py-4 bg-f5 rounded-sm mr-10">
-                <text class="text-xs text-666">{{item.productCount}}个商品</text>
+
+          <view class="flex-row items-center gap-20">
+            <view class="flex-row gap-10">
+              <view class="p-10" data-index="{{index}}" data-direction="up" catchtap="onMoveOrder">
+                <t-icon name="arrow-up" size="36rpx" color="{{item.isFirstInGroup ? '#eee' : '#999'}}" />
               </view>
-              <!-- 层级标签 -->
-              <view wx:if="{{item.indent === 0}}" class="px-12 py-4 bg-white-10 rounded-sm mr-10 border-1">
-                <text class="text-xs text-brand">一级</text>
-              </view>
-              <view wx:else class="px-12 py-4 bg-white-10 rounded-sm mr-10 border-1">
-                <text class="text-xs text-999">二级</text>
+              <view class="p-10" data-index="{{index}}" data-direction="down" catchtap="onMoveOrder">
+                <t-icon name="arrow-down" size="36rpx" color="{{item.isLastInGroup ? '#eee' : '#999'}}" />
               </view>
             </view>
-          </view>
-          <!-- 显示状态开关 -->
-          <view class="flex-row items-center mt-10">
-            <text class="text-sm text-999 mr-10">显示:</text>
-            <t-switch size="small" value="{{item.isVisible}}" data-id="{{item._id}}" bindchange="onToggleVisible" />
-          </view>
-        </view>
-        <!-- 右侧：操作按钮 -->
-        <view class="flex-row items-center gap-15">
-          <!-- 添加子分类按钮 (仅一级且无商品) -->
-          <view wx:if="{{item.canAddChild && item.indent === 0}}" class="flex items-center justify-center w-60 h-60" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onAddChild">
-            <t-icon name="add-circle" size="44rpx" color="#07c160" />
-          </view>
-          <!-- 删除按钮 -->
-          <view class="flex items-center justify-center w-60 h-60" data-id="{{item._id}}" data-name="{{item.name}}" data-has-children="{{item.hasChildren}}" data-product-count="{{item.productCount}}" catchtap="onDelete">
-            <t-icon name="delete" size="44rpx" color="#ff4d4f" />
+
+            <t-icon wx:if="{{item.indent === 0 && item.canAddChild}}" name="add" size="40rpx" color="#07c160" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onAddChild" />
+            <t-icon name="edit" size="40rpx" color="#1890ff" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onStartEdit" />
+            <t-icon name="delete" size="40rpx" color="#ff4d4f" data-id="{{item._id}}" data-name="{{item.name}}" data-has-children="{{item.hasChildren}}" data-product-count="{{item.productCount}}" catchtap="onDelete" />
           </view>
         </view>
-      </view>
-      <!-- 空状态 -->
-      <view wx:if="{{flatList.length === 0}}" class="flex-col items-center py-100">
-        <text class="text-xl text-999 mb-20">暂无分类数据</text>
-        <text class="text-sm text-999">点击下方按钮添加分类</text>
       </view>
     </view>
-  </view>
-  <!-- 底部新增按钮 -->
-  <view class="fixed bottom-0 left-0 full-w bg-white px-30 py-25 border-t">
-    <t-button theme="primary" size="large" block bindtap="onAdd">
-      <view class="flex-row items-center justify-center">
-        <t-icon name="add" size="40rpx" color="#fff" />
-        <text class="ml-10">新增一级分类</text>
-      </view>
-    </t-button>
-  </view>
+  </scroll-view>
+
+  <!-- 底部新增一级分类按钮 -->
+  <t-fab icon="add" bind:click="onAdd" aria-label="新增一级分类" class="bottom-0 right-0 m-30"></t-fab>
+
 </view>

@@ -2,64 +2,49 @@
 alwaysApply: true
 ---
 
-# Global Rules for One-Person Company Development (WeChat Mini Program)
+# 一人公司小程序开发全局规则 (微信小程序 + TDesign)
 
-## CSS & UI Guidelines (Atomic Design System)
+## 核心哲学
 
-### 1. Core Principle: Utility-First
+- **以产定入**：所有的代码修改必须直接指向当前的功能目标，严禁无意义的重构。
+- **借力不造**：优先使用原子类样式和 TDesign 组件，能不写自定义 CSS 就不写。
+- **说人话，杀痛点**：交互逻辑要简单易用（如箭头排序优于拖拽），代码注释要直指业务目的。
+- **敬畏现实**：优先实现 MVP 逻辑，代码要鲁棒，删除等敏感操作必须有二次确认和依赖检查。
 
-* **Anti-Semantic:** Do NOT use page-specific class names like `.profile-header` or `.order-list`.
-* **Atom Vocabulary:** Construct 98% of the UI using the global `atom.wxss`.
-* **TDesign:** Use TDesign components for complex logic. Use Atom classes for layout/spacing *wrapping* them.
+## CSS 与 UI 规范 (强制执行)
 
-### 2. The "Living Atom" Protocol (Crucial)
+### 1. 原子类优先原则
 
-*We treat `atom.wxss` as a growing standard library.*
+- **禁止私产**：严禁在页面特定的 `.wxss` 或 `.scss` 中编写业务语义类名（如 `.category-item`）。
+- **98% 覆盖率**：UI 必须由全局 `atom.wxss` 中的原子类组合而成。
+- **TDesign 协同**：复杂组件借力 TDesign，布局、间距、外层包装使用原子类。
 
-* **If a style exists:** Use it (e.g., `mt-20`, `text-lg`).
-* **If a style is MISSING:**
-* **Step 1:** Do NOT write inline styles (e.g., `style="margin-top: 32rpx"`).
-* **Step 2:** Do NOT create a local `.wxss` file.
-* **Step 3:** **Invent** the atomic class following the Naming Standard (e.g., `mt-32`) and use it in WXML.
-* **Step 4:** At the end of your response, **explicitly provide the CSS code** to be added to `atom.wxss`.
+### 2. "活的原子" 维护协议 (分类索引)
 
-### 3. Atom Definition Standards
+当发现样式缺失时，必须遵循以下流程：
 
-*Only define classes that follow these strict rules in `atom.wxss`:*
+1. **禁止行内样式**：严禁使用 `style="margin: 20rpx"`。
+2. **分类定位**：根据样式属性，确定它属于 `atom.wxss` 的哪个区块：
+    - [Layout] 布局
+    - [Spacing] 间距 (m, mt, mb, ml, mr, p, pt, pb, pl, px, py, gap)
+    - [Visual] 视觉 (bg, rounded, border)
+    - [Typography] 字体排版 (text, font)
+    - [Sizing & Position] 尺寸与定位 (w, h, relative, absolute, fixed)
+3. **有序插入**：在对应区块内按数值升序插入。
+4. **同步输出**：在代码回答的末尾，明确告知用户需要将哪段代码插入到 `atom.wxss` 的哪个位置。
 
-* **Single Responsibility:** One class = One property (Exceptions: `flex-center`, `truncate`).
-* **Units:** All dimensions MUST use `rpx`.
-* **Naming Convention (Tailwind-like):**
-* `{property}-{value}`: `mt-20` (margin-top), `p-30` (padding), `text-white` (color), `w-full` (width).
-* `{property}-{size}`: `text-lg`, `rounded-md`.
+### 3. 命名与单位
 
-* **Forbidden:** Do NOT define business-logic names in atom (e.g., `.avatar-box`, `.active-tab`).
+- **单位**：所有尺寸必须使用 `rpx`。
+- **风格**：遵循 Tailwind 风格，如 `mt-20` 代表 `margin-top: 20rpx`，`text-333` 代表 `color: #333333`。
 
-### 4. Code Generation Example
+## 代码逻辑准则 (TS/JS)
 
-**Scenario:** You need a top margin of 88rpx, but `mt-88` is not in the standard list.
+- [cite_start]**防御性编程**：删除操作前必须检查关联性（如检查商品数量 [cite: 66]）。
+- **交互反馈**：长按、成功保存、移动排序等操作必须调用 `wx.vibrateShort()` 提供物理反馈。
+- **简单胜过复杂**：排序逻辑优先使用数组索引交换（Arrow Buttons），除非用户明确要求复杂拖拽。
 
-**✅ Correct Output:**
+## 语言与交互
 
-```html
-<view class="flex-col bg-white p-30 rounded-md">
-  <text class="text-xl font-bold">Title</text>
-  <view class="mt-88 text-center text-999">
-    Content at bottom
-  </view>
-</view>
-
-```
-
-```css
-/* 💡 [Action Required] Append this to atom.wxss: */
-.mt-88 { margin-top: 88rpx; }
-
-```
-
-### 📚 Reference Vocabulary (Base Set)
-
-* **Layout:** `flex`, `flex-row`, `flex-col`, `flex-1`, `flex-none`, `justify-start/center/between/end`, `items-center/end/stretch`, `relative`, `absolute`.
-* **Spacing:** `m-0`, `mt/mb/ml/mr-{N}`, `p-0`, `p-{N}`, `px/py-{N}`, `gap-{N}`. (N = 10, 20, 24, 30, 32, 40...)
-* **Visual:** `bg-white`, `bg-f5`, `rounded-sm/md/lg/full`, `border-bottom`.
-* **Text:** `text-xs/sm/base/lg/xl/xxl`, `font-bold`, `text-center`, `text-333`, `text-666`, `text-999`, `truncate`.
+- **沟通语言**：所有解释、注释、提示信息必须使用【中文】。
+- **代码命名**：变量名、函数名保持英文。

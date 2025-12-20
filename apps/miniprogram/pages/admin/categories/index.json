@@ -5,6 +5,7 @@
     "t-button": "tdesign-miniprogram/button/button",
     "t-dialog": "tdesign-miniprogram/dialog/dialog",
     "t-switch": "tdesign-miniprogram/switch/switch",
-    "t-input": "tdesign-miniprogram/input/input"
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-fab": "tdesign-miniprogram/fab/fab"
   }
 }

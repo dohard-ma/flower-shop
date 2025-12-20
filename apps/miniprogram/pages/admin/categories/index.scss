@@ -1,16 +1,26 @@
-// 分类管理页面使用原子类布局
 @import "../../../style/common.wxss";
 
-// 拖拽悬停样式
-.drag-over {
-  background-color: #f0f9ff !important;
-  border-left: 4rpx solid #0052d9;
+.h-screen { height: 100vh; }
+
+// 输入框美化
+.input-edit {
+  border-bottom: 2rpx solid #0052d9;
+  padding: 4rpx 0;
+  background: transparent;
 }
 
-// 内联编辑输入框
-.input-edit {
-  border: 2rpx solid #0052d9;
-  border-radius: 8rpx;
-  padding: 10rpx 20rpx;
-  background-color: #fff;
+// 二级分类的轻微缩进感
+.bg-f5 {
+  background-color: #f9f9f9 !important;
+}
+
+// 按钮按下态反馈
+.p-10:active {
+  background-color: #f0f0f0;
+  border-radius: 50%;
+}
+
+// 覆盖 TDesign 默认边距
+.t-button {
+  --td-button-small-padding-horizontal: 24rpx;
 }
