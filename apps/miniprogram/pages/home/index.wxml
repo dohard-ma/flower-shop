@@ -1,71 +1,62 @@
-<!-- 商品列表页面 -->
-<view class="container">
-    <view class="header">
-        <image src="/assets/logo.png" mode="widthFix" class="logo" />
+<view class="container" style="--navbar-height: {{navbarHeight + 11}}rpx;">
+    <!-- 自定义导航栏 -->
+    <view class="custom-navbar">
+        <view class="navbar-title">花涧礼</view>
     </view>
-    <!-- 搜索栏 -->
-    <view class="search-bar">
-        <view class="search-input-wrapper">
-            <input class="search-input" placeholder="搜索商品名称或花材..." value="{{searchValue}}" bindinput="onSearchInput" bindconfirm="onSearchConfirm" />
-            <text class="search-icon">🔍</text>
-        </view>
-    </view>
-    <!-- 分类筛选标签 -->
-    <scroll-view class="category-tabs" scroll-x="true" show-scrollbar="false">
-        <view class="tabs-wrapper">
-            <view wx:for="{{categories}}" wx:key="value" class="tab-item {{currentCategory === item.value ? 'active' : ''}}" data-category="{{item.value}}" bindtap="onCategoryChange">
-                {{item.label}}
-            </view>
-        </view>
-    </scroll-view>
-    <!-- 商品列表 -->
-    <view class="product-list">
-        <view wx:if="{{loading}}" class="loading">
-            <text class="loading-text">加载中...</text>
-        </view>
-        <view wx:elif="{{products.length === 0}}" class="empty-state">
-            <text class="empty-icon">📦</text>
-            <text class="empty-text">暂无商品</text>
-            <text class="empty-desc">没有找到符合条件的商品</text>
-        </view>
-        <view wx:else class="product-grid">
-            <view wx:for="{{filteredProducts}}" wx:key="id" class="product-card" data-product="{{item}}" bindtap="onProductTap">
-                <!-- 商品图片 -->
-                <view class="product-image-wrapper">
-                    <image class="product-image" src="{{item.images[0] || '/assets/placeholder.png'}}" mode="aspectFill" lazy-load="true" />
-                    <!-- 状态标签 -->
-                    <view class="status-badge {{item.status === 'ACTIVE' ? 'active' : 'inactive'}}">
-                        {{item.status === 'ACTIVE' ? '在售' : '下架'}}
-                    </view>
-                    <!-- 分类标签 -->
-                    <view class="category-badge">{{getCategoryLabel(item.category)}}</view>
-                </view>
-                <!-- 商品信息 -->
-                <view class="product-info">
-                    <view class="product-name">{{item.name}}</view>
-                    <view class="product-desc">{{item.description || '暂无描述'}}</view>
-                    <!-- 花材信息 -->
-                    <view wx:if="{{item.materials && item.materials.length > 0}}" class="materials">
-                        <text class="materials-label">花材：</text>
-                        <text class="materials-text">{{getMaterialsText(item.materials)}}</text>
-                    </view>
-                    <!-- 价格信息 -->
-                    <view class="price-wrapper">
-                        <text class="price">{{item.priceRef}}</text>
-                        <text class="sort-order">序号：{{item.sortOrder}}</text>
-                    </view>
-                    <!-- 更新时间 -->
-                    <view class="update-time">{{formatTime(item.updatedAt)}}</view>
-                </view>
-            </view>
+    <!-- 搜索框 -->
+    <view class="search-container">
+        <t-search value="{{searchValue}}" placeholder="请输入商品名称" left-icon="search" right-icon="" bind:change="onSearchChange" class="search-input" />
+        <view class="search-icons">
+            <t-icon name="qrcode" size="48rpx" class="search-icon" />
+            <t-icon name="app" size="48rpx" class="search-icon" />
         </view>
     </view>
-    <!-- 加载更多 -->
-    <view wx:if="{{hasMore && !loading}}" class="load-more">
-        <view class="load-more-btn" bindtap="loadMore">加载更多</view>
+    <!-- 轮播图占位 -->
+    <view class="swiper-container">
+        <t-swiper current="{{currentSwiperIndex}}" autoplay="{{true}}" interval="3000" duration="500" height="400" bind:change="onSwiperChange" list="{{swiperList}}"></t-swiper>
     </view>
-    <!-- 没有更多数据 -->
-    <view wx:if="{{!hasMore && products.length > 0}}" class="no-more">
-        <text class="no-more-text">已加载全部商品</text>
+    <!-- 功能按钮占位 -->
+    <view class="feature-buttons">
+        <view class="feature-item">
+            <t-icon name="flower" size="64rpx" />
+            <text>订花</text>
+        </view>
+        <view class="feature-item">
+            <t-icon name="shop" size="64rpx" />
+            <text>周边商城</text>
+        </view>
+    </view>
+    <!-- 功能按钮占位 -->
+    <view class="feature-buttons">
+        <view class="feature-item">
+            <t-icon name="flower" size="64rpx" />
+            <text>订花</text>
+        </view>
+        <view class="feature-item">
+            <t-icon name="shop" size="64rpx" />
+            <text>周边商城</text>
+        </view>
+    </view>
+    <!-- 功能按钮占位 -->
+    <view class="feature-buttons">
+        <view class="feature-item">
+            <t-icon name="flower" size="64rpx" />
+            <text>订花</text>
+        </view>
+        <view class="feature-item">
+            <t-icon name="shop" size="64rpx" />
+            <text>周边商城</text>
+        </view>
+    </view>
+    <!-- 功能按钮占位 -->
+    <view class="feature-buttons">
+        <view class="feature-item">
+            <t-icon name="flower" size="64rpx" />
+            <text>订花</text>
+        </view>
+        <view class="feature-item">
+            <t-icon name="shop" size="64rpx" />
+            <text>周边商城</text>
+        </view>
     </view>
 </view>

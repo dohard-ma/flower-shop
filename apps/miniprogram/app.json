@@ -1,9 +1,11 @@
 {
     "pages": [
-        "pages/admin/index",
         "pages/home/index",
-        "pages/admin/upload/index",
+        "pages/category/index",
+        "pages/cart/index",
         "pages/user/index",
+        "pages/admin/index",
+        "pages/admin/upload/index",
         "pages/webview/index",
         "pages/admin/products/index",
         "pages/admin/detail/index"
@@ -17,21 +19,33 @@
             {
                 "text": "首页",
                 "pagePath": "pages/home/index",
-                "iconPath": "assets/icons/home.png",
-                "selectedIconPath": "assets/icons/home-active.png"
+                "iconPath": "./assets/icons/home-2-line.png",
+                "selectedIconPath": "./assets/icons/home-2-fill.png"
             },
             {
-                "text": "管理",
-                "pagePath": "pages/admin/index",
-                "iconPath": "assets/icons/user.png",
-                "selectedIconPath": "assets/icons/user-active.png"
+                "text": "分类",
+                "pagePath": "pages/category/index",
+                "iconPath": "./assets/icons/store-2-line.png",
+                "selectedIconPath": "./assets/icons/store-2-fill.png"
+            },
+            {
+                "text": "购物车",
+                "pagePath": "pages/cart/index",
+                "iconPath": "./assets/icons/shopping-cart-line.png",
+                "selectedIconPath": "./assets/icons/shopping-cart-fill.png"
+            },
+            {
+                "text": "我的",
+                "pagePath": "pages/user/index",
+                "iconPath": "./assets/icons/user-5-line.png",
+                "selectedIconPath": "./assets/icons/user-5-fill.png"
             }
         ]
     },
     "window": {
         "backgroundTextStyle": "light",
         "navigationBarBackgroundColor": "#ffffff",
-        "navigationBarTitleText": "FANYANG",
+        "navigationBarTitleText": "花涧礼",
         "navigationBarTextStyle": "black"
     },
     "requiredPrivateInfos": [
@@ -42,8 +56,9 @@
             "desc": "你的地址信息将用于收货地址选择"
         }
     },
-    "usingComponents": {},
-    "style": "v2",
+    "usingComponents": {
+        "t-icon": "tdesign-miniprogram/icon/icon"
+    },
     "sitemapLocation": "sitemap.json",
     "resolveAlias": {
         "@/*": "/*",

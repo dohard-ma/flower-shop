@@ -1,3 +1,9 @@
 {
-    "navigationStyle": "custom"
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "t-search": "tdesign-miniprogram/search/search",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-swiper": "tdesign-miniprogram/swiper/swiper"
+  }
 }

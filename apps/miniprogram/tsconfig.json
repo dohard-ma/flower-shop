@@ -23,7 +23,10 @@
       "@/*": ["./*"],
       "@/apis/*": ["./utils/apis/*"],
       "@/utils/*": ["./utils/*"],
-      "@/config/*": ["./config/*"]
+      "@/config/*": ["./config/*"],
+      "tdesign-miniprogram/*": [
+        "./miniprogram/miniprogram_npm/tdesign-miniprogram/*"
+      ]
     }
   },
   "include": ["./**/*.ts"],

@@ -9,9 +9,9 @@ page {
   --danger-color: #ff4d4f;
   --success-color: #52c41a;
 
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
-               Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB',
-               'Microsoft Yahei', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica,
+    Segoe UI, Arial, Roboto, "PingFang SC", "miui", "Hiragino Sans GB",
+    "Microsoft Yahei", sans-serif;
   font-size: 28rpx;
   line-height: 1.5;
   color: var(--text-color);

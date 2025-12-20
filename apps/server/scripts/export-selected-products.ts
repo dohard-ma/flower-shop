@@ -121,6 +121,43 @@ async function addWatermark(imagePath: string, outputPath: string): Promise<void
     }
 }
 
+// 截取为正方形
+async function cropToSquare(imagePath: string, outputPath: string): Promise<void> {
+    try {
+        // 1. 加入 .rotate() 自动处理手机照片旋转问题
+        const image = sharp(imagePath).rotate();
+
+        const imageMetadata = await image.metadata();
+        const imageWidth = imageMetadata.width || 0;
+        const imageHeight = imageMetadata.height || 0;
+
+        // 增加兜底检查，防止读取不到宽高导致后续计算 NaN
+        if (!imageWidth || !imageHeight) {
+            throw new Error('无法获取图片尺寸');
+        }
+
+        const minSize = Math.min(imageWidth, imageHeight);
+
+        // 计算居中坐标
+        const cropX = Math.floor((imageWidth - minSize) / 2);
+        const cropY = Math.floor((imageHeight - minSize) / 2);
+
+        // 2. 去掉 unnecessary await
+        // 注意：extract 是在原管道上操作，直接链式调用即可
+        await image
+            .extract({
+                left: cropX,
+                top: cropY,
+                width: minSize,
+                height: minSize
+            })
+            .toFile(outputPath);
+
+    } catch (error) {
+        console.error(`截取为正方形失败: ${imagePath}`, error);
+        throw error;
+    }
+}
 // 查找商品的所有图片
 async function findProductImages(productId: string, imagesDir: string): Promise<string[]> {
     const imageFiles: string[] = [];
@@ -256,7 +293,8 @@ async function exportSelectedProducts() {
 
                 try {
                     console.log(`    添加水印: ${path.basename(imagePath)} -> ${outputFileName}`);
-                    await addWatermark(imagePath, outputPath);
+                    // await addWatermark(imagePath, outputPath);
+                    await cropToSquare(imagePath, outputPath);
                     processedCount++;
                 } catch (error) {
                     console.error(`    水印处理失败: ${imagePath}`, error);

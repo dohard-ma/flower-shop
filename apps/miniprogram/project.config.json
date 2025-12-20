@@ -6,7 +6,7 @@
   },
   "miniprogramRoot": "",
   "compileType": "miniprogram",
-  "projectname": "千里挑一",
+  "projectname": "花涧礼",
   "setting": {
     "useCompilerPlugins": [
       "typescript",
@@ -52,7 +52,7 @@
   "simulatorPluginLibVersion": {},
   "condition": {},
   "srcMiniprogramRoot": "",
-  "appid": "wxdc3c161617527c21",
+  "appid": "wx24862b7afc06929e",
   "libVersion": "3.8.7",
   "editorSetting": {
     "tabIndent": "insertSpaces",

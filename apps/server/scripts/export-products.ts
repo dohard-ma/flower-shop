@@ -129,7 +129,9 @@ async function exportProducts() {
                 materials: product.materials,
                 description: product.description,
                 colorSeries: product.colorSeries,
-                targetAudience: product.targetAudience
+                targetAudience: product.targetAudience,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt
             };
 
             exportData.push(productData);
