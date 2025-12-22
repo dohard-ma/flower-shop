@@ -6,7 +6,7 @@ Page({
     userInfo: {
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie',
       badge: '🌿',
-      nickname: '爱种花的林小姐',
+      nickname: '送花小马',
       level: 'L2',
       userId: '8859 2034'
     },

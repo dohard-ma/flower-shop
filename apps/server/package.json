@@ -63,6 +63,7 @@
     "eslint-config-next": "^15.3.2",
     "exceljs": "^4.4.0",
     "graceful-fs": "^4.2.11",
+    "hashids": "^2.3.0",
     "html2canvas": "^1.4.1",
     "input-otp": "1.4.1",
     "jose": "^6.0.11",

@@ -1,6 +1,6 @@
 <view class="bg-gray pb-100">
     <!-- 1. 用户信息主卡片 -->
-    <view class="px-30 pt-30 pb-20">
+    <view class="px-30 mb-20">
         <profile-card userInfo="{{userInfo}}" levelInfo="{{levelInfo}}" bind:edit="onEdit" />
     </view>
     <!-- 2. 后台管理 -->
@@ -55,8 +55,8 @@
             </view>
         </view>
     </view>
-    <!-- 5. 客服导流 Banner -->
-    <view class="px-30 mb-60">
+    <!-- 5. 客服导流 -->
+    <view class="px-30 mb-20">
         <service-banner bind:contact="onContactService" />
     </view>
 </view>
