@@ -1,0 +1,57 @@
+---
+alwaysApply: false
+---
+
+# 微信小程序 API 接口定义规范
+
+本规范旨在确保 `flower-shop` 项目小程序端的 API 代码与现有架构（`request` 封装、错误处理、类型定义、云端集成）保持高度一致。
+
+## 1. 核心架构遵循
+
+- **请求封装**：必须使用 `@/utils/apis/index` 中的 `request<T>` 函数。
+- **基础路径**：内部已自动处理 `API_BASE_URL`，调用时仅需提供相对路径（如 `/products`）。
+- **鉴权**：`request` 函数已处理 Token 注入和 401 静默登录，无需在具体接口中手动处理 Header。
+
+## 2. 数据模型与类型定义
+
+- **模型优先**：在编写 API 逻辑前，先定义清晰的 TypeScript `interface` 或 `type`。
+- **枚举使用**：对于状态（Status）、类型（Type）等固定值，优先使用 `enum`。
+- **响应结构**：接口返回值类型应为 `Promise<ApiResponse<T>>` 或直接返回经过处理的 `data` 部分。
+
+## 3. 函数编写规范
+
+- **命名规范**：使用小驼峰（camelCase），动词开头（如 `get...`, `create...`, `update...`, `delete...`）。
+- **参数解构**：对于超过 2 个参数的函数，使用对象形式传参并定义相应的参数接口。
+- **复杂流封装**：如果涉及文件上传（如上传到七牛云）后再调用后端接口，应在 API 层封装完整逻辑（参考 `transcribeVoice` 示例）。
+
+## 4. 代码示例模板
+
+```typescript
+import { request } from './index';
+// 如需上传功能，引入 qiniu 工具
+// import { getQiniuToken, uploadToQiniu } from '@/utils/qiniu';
+
+/**
+ * [业务描述] 响应类型
+ */
+export interface XxxResponse {
+    // 字段定义
+}
+
+/**
+ * [接口描述]
+ * @param data 请求参数描述
+ */
+export async function yourApiFunction(data: { param1: string; param2: number }) {
+    return request<XxxResponse>({
+        url: '/your/endpoint',
+        method: 'POST', // 或 'GET', 'PUT', 'DELETE'
+        data
+    });
+}
+```
+
+## 5. 错误处理与反馈
+
+- 统一依赖 `request` 内部的 `wx.showToast` 处理 `success: false` 的情况。
+- 对于特殊的业务逻辑错误，可在调用层（Page 层）使用 `try...catch` 进行捕获 and 处理。

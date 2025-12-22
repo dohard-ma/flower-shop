@@ -1,6 +1,13 @@
 ---
-alwaysApply: true
+name: css-miniprogram
+description: 只针对 apps/miniprogram 目录下的样式文件的 CSS 规范
+globs:
+  - "apps/miniprogram/**/*.wxml"
+  - "apps/miniprogram/**/*.scss"
+  - "apps/miniprogram/**/*.wxss"
+cursorRuleType: specificFiles   # 可省略，带 globs 会自动识别为 specificFiles
 ---
+
 
 # 一人公司小程序开发全局规则 (微信小程序 + TDesign)
 
