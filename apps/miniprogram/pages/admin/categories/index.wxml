@@ -25,7 +25,9 @@
               </view>
             </view>
 
+            <t-icon wx:if="{{item.indent === 0 && item.hasChildren}}" name="{{item.expanded ? 'chevron-up' : 'chevron-down'}}" size="40rpx" color="#999" data-id="{{item._id}}" catchtap="onToggleExpand" />
             <t-icon wx:if="{{item.indent === 0 && item.canAddChild}}" name="add" size="40rpx" color="#07c160" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onAddChild" />
+            <t-icon name="{{item.isVisible ? 'browse' : 'browse-off'}}" size="40rpx" color="{{item.isVisible ? '#0052d9' : '#ccc'}}" data-id="{{item._id}}" data-visible="{{item.isVisible}}" catchtap="onToggleVisible" />
             <t-icon name="edit" size="40rpx" color="#1890ff" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onStartEdit" />
             <t-icon name="delete" size="40rpx" color="#ff4d4f" data-id="{{item._id}}" data-name="{{item.name}}" data-has-children="{{item.hasChildren}}" data-product-count="{{item.productCount}}" catchtap="onDelete" />
           </view>

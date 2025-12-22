@@ -11,13 +11,13 @@ export class WechatService {
   private static readonly PRIVATE_KEY_PATH = process.env.WECHAT_PRIVATE_KEY_PATH!; // 商户私钥路径
   private static readonly PLATFORM_CERT_PATH = process.env.WECHAT_PLATFORM_CERT_PATH!; // 微信支付平台证书路径
 
-  static async code2Session(code: string) {
+  static async code2Session(code: string, appId?: string, secret?: string) {
     try {
       const url = 'https://api.weixin.qq.com/sns/jscode2session';
       const response = await axios.get(url, {
         params: {
-          appid: this.APPID,
-          secret: this.SECRET,
+          appid: appId || this.APPID,
+          secret: secret || this.SECRET,
           js_code: code,
           grant_type: 'authorization_code'
         }
@@ -30,15 +30,15 @@ export class WechatService {
   }
 
   // 获取手机号
-  static async getPhoneNumber(code: string) {
+  static async getPhoneNumber(code: string, appId?: string, secret?: string) {
     try {
       // 首先获取access_token
       const tokenUrl = 'https://api.weixin.qq.com/cgi-bin/token';
       const tokenResponse = await axios.get(tokenUrl, {
         params: {
           grant_type: 'client_credential',
-          appid: this.APPID,
-          secret: this.SECRET
+          appid: appId || this.APPID,
+          secret: secret || this.SECRET
         }
       });
 
@@ -62,14 +62,14 @@ export class WechatService {
   }
 
   // 获取access_token
-  static async getAccessToken(): Promise<string> {
+  static async getAccessToken(appId?: string, secret?: string): Promise<string> {
     try {
       const tokenUrl = 'https://api.weixin.qq.com/cgi-bin/token';
       const tokenResponse = await axios.get(tokenUrl, {
         params: {
           grant_type: 'client_credential',
-          appid: this.APPID,
-          secret: this.SECRET
+          appid: appId || this.APPID,
+          secret: secret || this.SECRET
         }
       });
 

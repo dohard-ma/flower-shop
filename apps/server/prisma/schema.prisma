@@ -13,7 +13,17 @@ model Store {
   id          String     @id @default(cuid())
   name        String     // 店铺名称 (如: 花间里)
   code        String     @unique // 店铺英文标识 (如: H)，用于生成展示编号
+
   appId       String     @unique // 微信小程序 AppID (用于路由识别)
+  appSecret   String?    // 微信小程序 AppSecret (用于多租户动态调用)
+
+  // --- 支付配置 (未来扩展) ---
+  // 如果你要做微信支付服务商模式或独立支付，还需要存商户号
+  mchId       String?  // 商户号
+  mchKey      String?  // 支付密钥 V3
+
+  // --- 租户状态 ---
+  isActive    Boolean  @default(true) // 欠费了/到期了，可以一键关停这个租户
 
   users       User[]
   categories  Category[]

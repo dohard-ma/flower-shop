@@ -1,5 +1,6 @@
 ---
-description: Next.js API Route 定义规范，包括直接使用 Prisma 操作数据库和统一使用 ApiResponseBuilder 返回。
+description: Next.js API Route 定义规范，包括直接使用 Prisma 操作数据库和统一使用 ApiResponseBuilder 返
+回。
 globs: apps/server/src/app/api/**/*.ts
 alwaysApply: false
 ---
@@ -10,29 +11,45 @@ alwaysApply: false
 
 ## 1. 核心原则
 
-- **直接数据库访问**：在 API Route 文件中直接使用 `@/lib/prisma` 实例进行数据库操作。除非业务逻辑极其复杂，否则不需要引入额外的 Service 层。
+- **直接数据库访问**：在 API Route 文件中直接使用 `@/lib/prisma` 实例进行数据库操作。
 - **统一响应格式**：所有请求必须通过 `@/lib/api-response` 中的 `ApiResponseBuilder` 返回。
-- **数据校验**：使用 `zod` 定义 Schema 并对请求体（body）或查询参数（query）进行校验。
+- **数据校验**：使用 `zod` 定义 Schema 并对请求参数进行校验。
+- **上下文透明化**：绝不手动解析 JWT 或 TraceID，统一从中间件注入的 Header 中获取。
 
-## 2. 代码实现规范
+## 2. 目录与权限约定
 
-### 2.1 请求处理
+| 路径前缀 | 鉴权要求 | 租户要求 (`appId`) | 适用场景 |
+| :--- | :--- | :--- | :--- |
+| `/api/public` | 无需登录 | **不需要** | 全局公共接口 |
+| `/api/wx/public` | 无需登录 | **必须** | 小程序端免登录接口 (如：商品展示) |
+| `/api/wx` | 需登录 (User/Admin) | **必须** | 小程序端用户接口 (如：我的订单) |
+| `/api/wx/admin` | 需登录 (Admin) | **必须** | 小程序端管理员接口 (如：分类管理) |
+| `/api/admin` | 需登录 | **不需要** | PC 管理后台接口 |
 
-- 使用 `NextRequest` 类型声明请求参数。
-- 所有的业务逻辑应包裹在 `try...catch` 块中。
+## 3. 上下文获取 (Context Injection)
 
-### 2.2 响应处理
+中间件已处理所有拦截逻辑。在 Route Handler 中使用以下方式获取上下文：
 
-- **成功响应**：调用 `ApiResponseBuilder.success('trace-id', data)`。
-- **错误响应**：调用 `ApiResponseBuilder.error('trace-id', message, statusCode, details)`。
-- **校验失败**：当 `zod` 校验失败时，返回 400 状态码及详细错误信息。
+```typescript
+function getContext(request: NextRequest) {
+  return {
+    traceId: request.headers.get('X-Trace-ID')!, // 必有
+    appId: request.headers.get('x-wechat-appid'), // 仅 /api/wx/** 有
+    userId: request.headers.get('x-user-id'),     // 仅需登录接口有
+    role: request.headers.get('x-user-role'),      // 仅需登录接口有
+    storeId: request.headers.get('x-store-id'),    // 仅需登录接口有
+  };
+}
+```
 
-### 2.3 数据库操作
+## 4. 代码实现规范
 
-- 引入 Prisma：`import prisma from '@/lib/prisma';`。
-- 直接在路由处理函数中调用 `prisma.model.method()`。
+### 4.1 响应处理
 
-## 3. 代码示例模板
+- **成功响应**：`ApiResponseBuilder.success(traceId, data)`。
+- **错误响应**：`ApiResponseBuilder.error(traceId, message, statusCode, details)`。
+
+### 4.2 示例模板 (小程序管理员接口)
 
 ```typescript
 import { NextRequest } from 'next/server';
@@ -40,51 +57,30 @@ import { z } from 'zod';
 import { ApiResponseBuilder } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 
-// 1. 定义校验 Schema
 const schema = z.object({
   name: z.string().min(1, '名称不能为空'),
-  // ... 其他字段
 });
 
 export async function POST(request: NextRequest) {
+  const traceId = request.headers.get('X-Trace-ID')!;
+  const storeId = request.headers.get('x-store-id')!; // 中间件已确保存在
+
   try {
-    // 2. 解析与校验数据
     const body = await request.json();
     const validation = schema.safeParse(body);
 
     if (!validation.success) {
-      return ApiResponseBuilder.error(
-        'trace-id',
-        '数据校验失败',
-        400,
-        Object.entries(validation.error.flatten().fieldErrors).map(([field, errors]) => ({
-          field,
-          message: errors?.[0] || '验证失败'
-        }))
-      );
+      return ApiResponseBuilder.error(traceId, '数据校验失败', 400);
     }
 
-    // 3. 直接使用 Prisma 操作数据库
     const result = await prisma.yourModel.create({
-      data: validation.data
+      data: { ...validation.data, storeId }
     });
 
-    // 4. 统一返回成功响应
-    return ApiResponseBuilder.success('trace-id', result);
-
+    return ApiResponseBuilder.success(traceId, result);
   } catch (error: any) {
-    console.error('操作失败:', error);
-    // 5. 统一返回错误响应
-    return ApiResponseBuilder.error('trace-id', '操作失败', 500, [
-      { message: error.message }
-    ]);
+    console.error(`[API Error] ${traceId}:`, error);
+    return ApiResponseBuilder.error(traceId, '操作失败', 500);
   }
 }
 ```
-
-## 4. 路由约定
-
-- 微信小程序专用接口建议放置在 `apps/server/src/app/api/wx/` 目录下。
-- 公共接口建议放置在 `apps/server/src/app/api/public/` 目录下。
-- 管理员接口建议放置在 `apps/server/src/app/api/admin/` 目录下
-- 接口路径应遵循 RESTful 风格或业务功能模块化。

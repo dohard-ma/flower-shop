@@ -25,10 +25,11 @@ const JWT_CONFIG = {
   };
 
 export interface JWTPayload {
-  userId: number;
+  userId: string;
   userNo: string;
   username: string;
   role: UserRole;
+  storeId: string;
   iat?: number;
   exp?: number;
   iss?: string;
@@ -65,8 +66,10 @@ export async function verifyToken(
       issuer: config.issuer
     });
 
-    // 验证角色是否匹配
-    if (payload.role !== role) {
+    // 验证逻辑：
+    // 1. 如果要求的是 ADMIN Token 类型，则 payload.role 必须是 admin
+    // 2. 如果要求的是 USER Token 类型，则 payload.role 可以是 user 或 admin
+    if (role === UserRole.ADMIN && payload.role !== UserRole.ADMIN) {
       throw new Error('Invalid role');
     }
 

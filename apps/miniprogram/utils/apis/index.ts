@@ -12,6 +12,9 @@ export type ApiResponse<T> = {
 
 // 改进的请求封装
 export async function request<T>(options: WechatMiniprogram.RequestOption): Promise<ApiResponse<T>> {
+    const accountInfo = wx.getAccountInfoSync();
+    const appId = accountInfo.miniProgram.appId;
+
     const handleRequest = async (retryCount = 0): Promise<ApiResponse<T>> => {
         try {
             // 确保有 userToken
@@ -26,7 +29,8 @@ export async function request<T>(options: WechatMiniprogram.RequestOption): Prom
                         url: `${API_BASE_URL}${options.url}`,
                         header: {
                             ...options.header,
-                            Authorization: `Bearer ${token}`,
+                            'Authorization': `Bearer ${token}`,
+                            'x-wechat-appid': appId, // 统一注入 AppID
                         },
                         success: resolve,
                         fail: (err) => {

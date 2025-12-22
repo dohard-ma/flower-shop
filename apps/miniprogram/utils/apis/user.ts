@@ -30,12 +30,18 @@ export async function silentLogin(): Promise<void> {
     }
 
     // 发送 code 到服务器
+    const accountInfo = wx.getAccountInfoSync();
+    const appId = accountInfo.miniProgram.appId;
+
     const { data } = await new Promise<WechatMiniprogram.RequestSuccessCallbackResult>(
       (resolve, reject) => {
         wx.request({
           url: `${API_BASE_URL}/users`,
           method: 'POST',
           data: { code: loginRes.code },
+          header: {
+            'x-wechat-appid': appId
+          },
           success: resolve,
           fail: reject,
         });

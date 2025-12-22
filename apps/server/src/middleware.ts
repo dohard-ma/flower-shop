@@ -11,11 +11,6 @@ const ROLE_PATHS = {
   [UserRole.GUEST]: ['/api/public']
 } as const;
 
-// 检查路径是否需要特定角色
-function checkPathPermission(path: string, role: UserRole): boolean {
-  const allowedPaths = ROLE_PATHS[role];
-  return allowedPaths.some((prefix) => path.startsWith(prefix));
-}
 function generateTraceId(pathname: string): string {
   const path = pathname.replace(/^\//, '').replace(/\//g, '.')
   const timestamp = Date.now().toString().slice(-6)
@@ -23,14 +18,33 @@ function generateTraceId(pathname: string): string {
   return `${path}.${timestamp}${random}`
 }
 
-
-// 获取路径对应的角色
-function getRoleFromPath(path: string): UserRole | null {
-  for (const [role, paths] of Object.entries(ROLE_PATHS)) {
-    if (paths.some((prefix) => path.startsWith(prefix))) {
-      return role as UserRole;
-    }
+// 获取路径对应的角色和要求
+function getRouteConfig(path: string) {
+  // 1. 真正的全局公开接口 (无需 appId, 无需登录)
+  if (path.startsWith('/api/public')) {
+    return { role: UserRole.GUEST, needAppId: false, needAuth: false };
   }
+
+  // 2. 小程序公开接口 (需 appId, 无需登录)
+  if (path.startsWith('/api/wx/public') || path === '/api/wx/users') {
+    return { role: UserRole.GUEST, needAppId: true, needAuth: false };
+  }
+
+  // 3. 小程序端管理员接口 (需 appId, 需登录, 需 admin 角色)
+  if (path.startsWith('/api/wx/admin')) {
+    return { role: UserRole.ADMIN, needAppId: true, needAuth: true };
+  }
+
+  // 4. 小程序端通用接口 (需 appId, 需登录)
+  if (path.startsWith('/api/wx')) {
+    return { role: UserRole.USER, needAppId: true, needAuth: true };
+  }
+
+  // 5. 后台管理接口 (需登录)
+  if (path.startsWith('/api/admin')) {
+    return { role: UserRole.ADMIN, needAppId: false, needAuth: true };
+  }
+
   return null;
 }
 
@@ -56,57 +70,69 @@ export async function middleware(request: NextRequest) {
     body: requestBody || undefined,
   })
 
-  // // 跳过不需要验证的路径
-  // if (
-  //   pathname.startsWith('/_next') ||
-  //   pathname.startsWith('/static') ||
-  //   pathname.startsWith('/favicon.ico') ||
-  //   pathname === '/api/admin/auth/login' ||
-  //   pathname === '/api/wx/users' || // 跳过登录接口
-  //   pathname === '/api/wx/payment/notify'
-  // ) {
-  //   return NextResponse.next();
-  // }
+  // 跳过不需要处理的静态路径
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname === '/api/wx/payment/notify'
+  ) {
+    return NextResponse.next();
+  }
 
-  // // 获取路径对应的角色
-  // const requiredRole = getRoleFromPath(pathname);
+  // 获取路由配置
+  const config = getRouteConfig(pathname);
 
-  // // 如果是公开路径，直接放行
-  // if (requiredRole === UserRole.GUEST) {
-  //   return NextResponse.next();
-  // }
+  // 如果没有找到配置，说明路径不合法
+  if (!config) {
+    return ApiResponseBuilder.error(traceId, '接口不存在', 404);
+  }
 
-  // // 如果没有找到对应的角色配置，返回 404
-  // if (!requiredRole) {
-  //   return NextResponse.json(
-  //     ApiResponseBuilder.error('trace-id', '接口不存在', 404),
-  //     { status: 404 }
-  //   );
-  // }
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('X-Trace-ID', traceId);
 
-  // try {
-  //   // 验证 token
-  //   const payload = await getVerifiedToken(request, requiredRole);
+  // 校验 AppId
+  if (config.needAppId) {
+    const appId = request.headers.get('x-wechat-appid');
+    if (!appId) {
+      return ApiResponseBuilder.error(traceId, '未识别的小程序客户端 (Missing x-wechat-appid)', 400);
+    }
+    requestHeaders.set('x-wechat-appid', appId);
+  }
 
-  //   // 将用户信息添加到请求头中
-  //   const requestHeaders = new Headers(request.headers);
-  //   requestHeaders.set('x-user-id', payload.userId.toString());
-  //   requestHeaders.set('x-user-role', payload.role);
-  //   requestHeaders.set('X-Trace-ID', traceId)
+  // 如果不需要登录，直接放行
+  if (!config.needAuth) {
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders
+      }
+    });
+  }
 
-  // 继续处理请求
-  // return NextResponse.next({
-  //   request: {
-  //     headers: requestHeaders
-  //   }
-  // });
-  // } catch (error) {
-  //   // 其他角色返回 401
-  //   return NextResponse.json(
-  //     ApiResponseBuilder.error('trace-id', '未登录或登录已过期', 401),
-  //     { status: 401 }
-  //   );
-  // }
+  try {
+    // 验证 token
+    const payload = await getVerifiedToken(request, config.role);
+
+    // 额外的权限检查：如果是 ADMIN 路径，角色必须是 admin
+    if (config.role === UserRole.ADMIN && payload.role !== UserRole.ADMIN) {
+      return ApiResponseBuilder.error(traceId, '权限不足', 403);
+    }
+
+    // 将用户信息添加到请求头中
+    requestHeaders.set('x-user-id', payload.userId);
+    requestHeaders.set('x-user-role', payload.role);
+    requestHeaders.set('x-store-id', payload.storeId);
+
+    // 继续处理请求
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders
+      }
+    });
+  } catch (error: any) {
+    const message = error.message === 'No token provided' ? '未登录' : '登录已过期';
+    return ApiResponseBuilder.error(traceId, message, 401);
+  }
 }
 
 export const config = {
