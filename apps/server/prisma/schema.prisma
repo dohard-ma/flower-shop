@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 // ------------------------------------------
 // 1. 店铺表 (租户核心)
