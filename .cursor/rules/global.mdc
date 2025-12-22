@@ -1,0 +1,13 @@
+---
+description: 全局项目规则，包含终端使用偏好
+globs:
+alwaysApply: true
+---
+
+# 全局规则
+
+## 终端与环境 (Terminal & Environment)
+
+- **必须固定使用 Git Bash** 作为执行终端命令的 Shell。
+- 项目环境依赖 `fnm` 进行 Node.js 版本自动切换，该配置仅在 Git Bash 中生效。
+- 严禁使用 PowerShell 或默认的 Windows Command Prompt (cmd) 执行命令，以避免环境版本冲突（如 Node.js 版本不匹配导致的 Prisma 错误）。
