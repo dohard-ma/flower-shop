@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信小程序资料完善原型</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slide-up {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slide-up 0.3s ease-out forwards;
+        }
+        .loading-spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            width: 1.25rem;
+            height: 1.25rem;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 针对微信 H5 模拟 */
+        body {
+            background-color: #f7f7f7;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-[#333]">
+
+    <!-- 模拟背景页面 -->
+    <div class="w-full max-w-md bg-white rounded-[24px] overflow-hidden shadow-sm border border-gray-100 p-6 flex flex-col items-center">
+        <div class="w-full h-32 bg-green-50 rounded-2xl mb-4 flex items-center justify-center text-green-200 font-bold">
+            小程序首页内容占位
+        </div>
+        <button id="openModal" class="text-blue-500 text-sm font-medium hover:text-blue-600 transition-colors">
+            重新打开授权弹窗
+        </button>
+    </div>
+
+    <!-- 遮罩层与弹窗容器 -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-40 flex items-end sm:items-center justify-center hidden">
+
+        <!-- 底部半屏弹窗主体 -->
+        <div id="modalContent" class="w-full max-w-md bg-white rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl relative translate-y-full transition-transform duration-300">
+
+            <!-- 顶部标题 -->
+            <div class="px-8 pt-8 pb-2 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">注册与登录</h3>
+                    <p class="text-xs text-gray-400 mt-1">请完善您的个人资料以开启完整服务</p>
+                </div>
+                <button id="closeModal" class="p-2 text-gray-300 hover:text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <form id="loginForm" class="px-8 pb-10 mt-4 space-y-6">
+
+                <!-- 1. 头像选择区 - 修复了 icon 被遮挡的问题 -->
+                <div class="flex flex-col items-center justify-center py-2">
+                    <button type="button" id="avatarBtn" class="group relative w-20 h-20 transition-all active:scale-95">
+                        <!-- 头像容器：负责裁剪图片 -->
+                        <div class="w-full h-full rounded-full bg-gray-50 border-2 border-dashed border-gray-200 group-hover:border-green-400 overflow-hidden flex items-center justify-center">
+                            <div id="avatarPlaceholder" class="text-gray-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            </div>
+                            <img id="userAvatar" src="" class="hidden w-full h-full object-cover" />
+                        </div>
+
+                        <!-- 相机图标：在容器外定位，避免被裁剪 -->
+                        <div class="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-white shadow-sm z-10">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        </div>
+                    </button>
+                    <span class="text-[11px] text-green-600 font-medium mt-3">点击获取微信头像</span>
+                </div>
+
+                <!-- 2. 表单字段组 -->
+                <div class="space-y-4">
+                    <!-- 昵称输入 -->
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-500 ml-1">用户昵称</label>
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="nicknameInput"
+                                placeholder="请输入或获取微信昵称"
+                                class="w-full bg-gray-50 border-none rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-green-500/20 placeholder:text-gray-300 outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- 手机号授权 -->
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-500 ml-1">联系手机</label>
+                        <div id="phoneAction">
+                            <button
+                                type="button"
+                                id="getPhoneBtn"
+                                class="w-full py-3.5 bg-green-50 text-green-600 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 border border-green-100 active:bg-green-100 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                <span>获取微信绑定手机号</span>
+                            </button>
+                        </div>
+                        <div id="phoneDisplay" class="hidden relative">
+                            <input
+                                type="text"
+                                id="phoneInput"
+                                value="138 **** 8888"
+                                disabled
+                                class="w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-sm text-gray-500 cursor-not-allowed"
+                            />
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 隐私与提交 -->
+                <div class="pt-2 space-y-4">
+                    <div class="flex items-start space-x-3 cursor-pointer group" id="agreementTrigger">
+                        <div id="checkbox" class="mt-1 min-w-[16px] h-[16px] rounded border-2 flex items-center justify-center transition-all border-gray-200 group-hover:border-green-300">
+                            <svg id="checkIcon" class="hidden text-white" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <span class="text-[11px] text-gray-400 leading-relaxed">
+                            我已阅读并同意 <span class="text-green-600 font-medium">《服务协议》</span> 及 <span class="text-green-600 font-medium">《隐私保护指引》</span>，同意应用获取以上信息。
+                        </span>
+                    </div>
+
+                    <button
+                        type="submit"
+                        id="submitBtn"
+                        class="w-full py-4 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold text-lg transition-all shadow-lg shadow-green-100 active:scale-[0.98] flex items-center justify-center space-x-2"
+                    >
+                        <span id="btnText">保存资料并登录</span>
+                        <div id="btnSpinner" class="loading-spinner hidden"></div>
+                    </button>
+                </div>
+            </form>
+
+            <!-- iOS 底部指示线 -->
+            <div class="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-3"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素
+        const openModal = document.getElementById('openModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalContent = document.getElementById('modalContent');
+        const avatarBtn = document.getElementById('avatarBtn');
+        const userAvatar = document.getElementById('userAvatar');
+        const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+        const getPhoneBtn = document.getElementById('getPhoneBtn');
+        const phoneAction = document.getElementById('phoneAction');
+        const phoneDisplay = document.getElementById('phoneDisplay');
+        const agreementTrigger = document.getElementById('agreementTrigger');
+        const checkbox = document.getElementById('checkbox');
+        const checkIcon = document.getElementById('checkIcon');
+        const loginForm = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const nicknameInput = document.getElementById('nicknameInput');
+
+        // 状态变量
+        let isAgreed = false;
+        let isPhoneAuthorized = false;
+        let hasAvatar = false;
+
+        // 打开/关闭逻辑
+        function showModal() {
+            modalOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function hideModal() {
+            modalContent.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        openModal.onclick = showModal;
+        closeModal.onclick = hideModal;
+        modalOverlay.onclick = (e) => { if(e.target === modalOverlay) hideModal(); };
+
+        // 模拟头像选择 (chooseAvatar)
+        avatarBtn.onclick = () => {
+            userAvatar.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
+            userAvatar.classList.remove('hidden');
+            avatarPlaceholder.classList.add('hidden');
+            hasAvatar = true;
+        };
+
+        // 模拟手机号授权 (getPhoneNumber)
+        getPhoneBtn.onclick = () => {
+            phoneAction.classList.add('hidden');
+            phoneDisplay.classList.remove('hidden');
+            isPhoneAuthorized = true;
+        };
+
+        // 协议勾选
+        agreementTrigger.onclick = () => {
+            isAgreed = !isAgreed;
+            if (isAgreed) {
+                checkbox.classList.add('bg-green-500', 'border-green-500');
+                checkIcon.classList.remove('hidden');
+            } else {
+                checkbox.classList.remove('bg-green-500', 'border-green-500');
+                checkIcon.classList.add('hidden');
+            }
+        };
+
+        // 表单提交模拟
+        loginForm.onsubmit = (e) => {
+            e.preventDefault();
+
+            if (!isAgreed) {
+                alert("请先勾选并同意服务协议");
+                return;
+            }
+            if (!nicknameInput.value || !hasAvatar || !isPhoneAuthorized) {
+                alert("请完善所有信息后再提交");
+                return;
+            }
+
+            // 登录状态
+            btnText.textContent = "正在登录...";
+            btnSpinner.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.replace('bg-green-500', 'bg-green-400');
+
+            setTimeout(() => {
+                hideModal();
+                // 重礼
+                btnText.textContent = "保存资料并登录";
+                btnSpinner.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.replace('bg-green-400', 'bg-green-500');
+                alert("登录成功！");
+            }, 1500);
+        };
+
+        // 初始化显示
+        window.onload = showModal;
+    </script>
+</body>
+</html>

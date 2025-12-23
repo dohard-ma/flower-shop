@@ -1,118 +1,145 @@
 import { ORDER_STATUS, SERVICE_LIST, ADMIN_LIST } from '../../common/constants'
+import { storage, STORAGE_KEYS } from '../../utils/storage';
+import { getUserInfo } from '../../utils/apis/user';
 
 Page({
   data: {
-    isAdmin: false, // TODO: 根据实际权限控制
-    userInfo: {
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie',
-      badge: '🌿',
-      nickname: '送花小马',
-      level: 'L2',
-      userId: '8859 2034'
-    },
-    levelInfo: {
-      title: 'L2 高级花友',
-      current: 1280,
-      total: 2000,
-      percent: 65
-    },
+    isLoggedIn: false,
+    isAdmin: false,
+    userInfo: null as any,
+    levelInfo: null as any,
     orderStatus: ORDER_STATUS,
     serviceList: SERVICE_LIST,
     adminList: ADMIN_LIST,
   },
 
   onLoad() {
-    // TODO: 获取用户信息、等级、资产等数据
-    this.checkAdminAuth()
+    this.initData()
   },
 
-  // 检查管理员权限
-  checkAdminAuth() {
-    // TODO: 实际的权限检查逻辑
-    // 这里先简单设置为 true 便于测试
+  onShow() {
+    // 每次进入页面都检查一下登录状态
+    this.checkLoginStatus()
+  },
+
+  async initData() {
+    await this.checkLoginStatus()
+    if (this.data.isLoggedIn) {
+      this.fetchUserInfo()
+    }
+  },
+
+  async checkLoginStatus() {
+    const token = storage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    const userInfo = storage.getItem(STORAGE_KEYS.USER_INFO);
+
     this.setData({
-      isAdmin: true
-    })
+      isLoggedIn: !!token,
+      userInfo: userInfo || null,
+      isAdmin: userInfo?.isAdmin || false // 假设 userInfo 中有 isAdmin 字段
+    });
+  },
+
+  async fetchUserInfo() {
+    try {
+      const res = await getUserInfo();
+      if (res.success) {
+        this.setData({
+          userInfo: res.data,
+          isLoggedIn: true,
+          isAdmin: (res.data as any).isAdmin || false
+        });
+        storage.setItem(STORAGE_KEYS.USER_INFO, res.data);
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error);
+    }
+  },
+
+  // 统一拦截跳转
+  ensureLogin(callback: Function) {
+    if (!this.data.isLoggedIn) {
+      const profileCard = this.selectComponent('#profileCard');
+      if (profileCard) {
+        profileCard.showLogin();
+      }
+      return;
+    }
+    callback();
+  },
+
+  // 登录成功回调
+  onLoginSuccess(e: any) {
+    const userInfo = e.detail;
+    this.setData({
+      isLoggedIn: true,
+      userInfo: userInfo,
+      isAdmin: userInfo.isAdmin || false
+    });
+    storage.setItem(STORAGE_KEYS.USER_INFO, userInfo);
+    // 可以在这里刷新其他数据
   },
 
   // 编辑资料
   onEdit() {
-    wx.showToast({
-      title: '编辑资料',
-      icon: 'none'
-    })
-  },
-
-  // 积分
-  onPoints() {
-    wx.showToast({
-      title: '积分余额',
-      icon: 'none'
-    })
-  },
-
-  // 礼品卡
-  onGiftCard() {
-    wx.showToast({
-      title: '礼品卡',
-      icon: 'none'
-    })
+    this.ensureLogin(() => {
+      wx.showToast({
+        title: '编辑资料',
+        icon: 'none'
+      })
+    });
   },
 
   // 全部订单
   onAllOrders() {
-    wx.showToast({
-      title: '全部订单',
-      icon: 'none'
-    })
+    this.ensureLogin(() => {
+      wx.showToast({
+        title: '全部订单',
+        icon: 'none'
+      })
+    });
   },
 
   // 订单状态
   onOrderStatus(e: any) {
-    const type = e.currentTarget.dataset.type
-    wx.showToast({
-      title: `订单类型: ${type}`,
-      icon: 'none'
-    })
+    this.ensureLogin(() => {
+      const type = e.currentTarget.dataset.type
+      wx.showToast({
+        title: `订单类型: ${type}`,
+        icon: 'none'
+      })
+    });
   },
 
   // 服务功能
   onService(e: any) {
-    const type = e.currentTarget.dataset.type
-    wx.showToast({
-      title: `服务: ${type}`,
-      icon: 'none'
-    })
+    this.ensureLogin(() => {
+      const type = e.currentTarget.dataset.type
+      wx.showToast({
+        title: `服务: ${type}`,
+        icon: 'none'
+      })
+    });
   },
 
   // 联系客服
   onContactService() {
+    // 联系客服通常不需要登录，但如果业务要求也可以拦截
     wx.showToast({
       title: '联系专属花艺师',
       icon: 'none'
     })
   },
 
-  // 商品管理
-  onProductManagement() {
-    wx.navigateTo({
-      url: '/pages/admin/index'
-    })
-  },
-
   // 后台管理
   onAdmin(e: any) {
-    const type = e.currentTarget.dataset.type
-    wx.showToast({
-      title: `管理: ${type}`,
-      icon: 'none'
-    })
-
-    if (type) {
-      wx.navigateTo({
-        url: `/pages/admin/${type}/index`
-      })
-    }
-
+    this.ensureLogin(() => {
+      const type = e.currentTarget.dataset.type
+      if (type) {
+        wx.navigateTo({
+          url: `/pages/admin/${type}/index`
+        })
+      }
+    });
   },
 })

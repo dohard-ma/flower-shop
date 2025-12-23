@@ -1,29 +1,147 @@
+import { storage, STORAGE_KEYS } from '../../utils/storage';
+import { updateUserInfo, uploadAvatarApi } from '../../utils/apis/user';
+
 Component({
   properties: {
+    isLoggedIn: {
+      type: Boolean,
+      value: false
+    },
     userInfo: {
       type: Object,
       value: {
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie',
-        badge: '🌿',
-        nickname: '送花小马',
-        level: 'L2',
-        userId: '8859 2034'
+        avatar: '',
+        badge: '',
+        nickname: '',
+        level: '',
+        userId: ''
       }
     },
     levelInfo: {
       type: Object,
       value: {
-        title: 'L2 高级花友',
-        current: 1280,
-        total: 2000,
-        percent: 65
+        title: '',
+        current: 0,
+        total: 0,
+        percent: 0
       }
     }
   },
 
+  data: {
+    showLoginPopup: false,
+    defaultAvatar: 'https://tdesign.gtimg.com/mobile/demos/avatar1.png',
+    tempAvatar: '',
+    tempNickname: '',
+    tempPhone: '',
+    tempPhoneCode: '',
+    isAgreed: false,
+    isSubmitting: false
+  },
+
   methods: {
+    toggleAgreement() {
+      this.setData({ isAgreed: !this.data.isAgreed });
+      if (this.data.isAgreed) {
+        // wx.vibrateShort({ type: 'light' });
+      }
+    },
+    showLogin() {
+      this.setData({ showLoginPopup: true });
+    },
+
+    onPopupVisibleChange(e: any) {
+      this.setData({
+        showLoginPopup: e.detail.visible,
+      });
+    },
+
+    closeLoginPopup() {
+      this.setData({ showLoginPopup: false });
+    },
+
     onEdit() {
       this.triggerEvent('edit')
+    },
+
+    // 处理头像选择
+    onChooseAvatar(e: any) {
+      const { avatarUrl } = e.detail;
+      console.log('选择头像结果:', avatarUrl);
+      this.setData({ tempAvatar: avatarUrl });
+    },
+
+    // 处理昵称输入
+    onNicknameChange(e: any) {
+      this.setData({ tempNickname: e.detail.value });
+    },
+
+    // 处理获取手机号
+    async onGetPhoneNumber(e: any) {
+      if (e.detail.errMsg === 'getPhoneNumber:ok') {
+        const { code } = e.detail;
+        this.setData({
+          tempPhoneCode: code,
+          tempPhone: '已获取微信手机号' // 占位显示，实际登录时用 code
+        });
+      } else {
+        wx.showToast({ title: '获取手机号失败', icon: 'none' });
+      }
+    },
+
+    // 提交登录
+    async onLoginSubmit() {
+      const { tempAvatar, tempNickname, tempPhoneCode, isAgreed } = this.data;
+
+      if (!isAgreed) {
+        wx.vibrateShort({ type: 'medium' });
+        wx.showToast({ title: '请阅读并同意协议', icon: 'none' });
+        return;
+      }
+
+      if (!tempAvatar || !tempNickname || !tempPhoneCode) {
+        wx.showToast({ title: '请完善资料', icon: 'none' });
+        return;
+      }
+
+      this.setData({ isSubmitting: true });
+      wx.showLoading({ title: '登录中...' });
+
+      try {
+        // ... 原有逻辑 ...
+        // 1. 上传头像
+        let finalAvatar = tempAvatar;
+        if (tempAvatar.startsWith('http://tmp/') || tempAvatar.startsWith('wxfile://')) {
+          const uploadRes = await uploadAvatarApi(tempAvatar);
+          finalAvatar = uploadRes.data.avatarUrl;
+        }
+
+        // 2. 更新用户信息
+        const updateRes = await updateUserInfo({
+          nickname: tempNickname,
+          phone: tempPhoneCode,
+        });
+
+        if (updateRes.success) {
+          wx.showToast({ title: '登录成功', icon: 'success' });
+          wx.vibrateShort({ type: 'medium' });
+          this.setData({
+            showLoginPopup: false,
+            tempAvatar: '',
+            tempNickname: '',
+            tempPhone: '',
+            tempPhoneCode: '',
+            isAgreed: false
+          });
+          this.triggerEvent('login-success', updateRes.data);
+        }
+      } catch (error) {
+        console.error('登录失败:', error);
+        wx.showToast({ title: '登录失败，请重试', icon: 'none' });
+      } finally {
+        this.setData({ isSubmitting: false });
+        wx.hideLoading();
+      }
     }
   }
 })

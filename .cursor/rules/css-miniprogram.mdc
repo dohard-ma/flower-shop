@@ -5,51 +5,61 @@ globs:
   - "apps/miniprogram/**/*.wxml"
   - "apps/miniprogram/**/*.scss"
   - "apps/miniprogram/**/*.wxss"
-cursorRuleType: specificFiles   # 可省略，带 globs 会自动识别为 specificFiles
+cursorRuleType: specificFiles
 ---
-
 
 # 一人公司小程序开发全局规则 (微信小程序 + TDesign)
 
 ## 核心哲学
 
 - **以产定入**：所有的代码修改必须直接指向当前的功能目标，严禁无意义的重构。
-- **借力不造**：优先使用原子类样式和 TDesign 组件，能不写自定义 CSS 就不写。
-- **说人话，杀痛点**：交互逻辑要简单易用（如箭头排序优于拖拽），代码注释要直指业务目的。
-- **敬畏现实**：优先实现 MVP 逻辑，代码要鲁棒，删除等敏感操作必须有二次确认和依赖检查。
+- **借力不造**：优先使用原子类样式和 TDesign 组件。**利用 CSS 变量接管 TDesign 主题**。
+- **说人话，杀痛点**：交互逻辑要简单易用，代码注释要直指业务目的。
+- **敬畏现实**：优先实现 MVP 逻辑，代码要鲁棒。
 
 ## CSS 与 UI 规范 (强制执行)
 
-### 1. 原子类优先原则
+### 1. 颜色系统 (Theme First)
 
-- **禁止私产**：严禁在页面特定的 `.wxss` 或 `.scss` 中编写业务语义类名（如 `.category-item`）。
-- **98% 覆盖率**：UI 必须由全局 `atom.wxss` 中的原子类组合而成。
-- **TDesign 协同**：复杂组件借力 TDesign，布局、间距、外层包装使用原子类。
+- **单一真理源**：所有颜色值必须定义在 `app.wxss` 的 `page` 作用域中，使用 CSS 变量 (e.g., `--brand-color`)。
+- **TDesign 桥接**：必须将自定义变量映射到 TDesign 的系统变量 (如 `--td-brand-color: var(--brand-color)`)，确保组件库与原子类颜色一致。
+- **语义化命名**：
+  - 🚫 **禁止**：使用颜色描述类名，如 `text-red`, `bg-blue` (除非是通用的 error/success)。
+  - ✅ **必须**：使用业务语义类名，如 `text-brand` (品牌色), `text-main` (正文), `text-sub` (辅助), `text-price` (价格强调)。
 
-### 2. "活的原子" 维护协议 (分类索引)
+### 2. 原子类优先原则 (Atomic CSS)
 
-当发现样式缺失时，必须遵循以下流程：
+- **禁止私产**：严禁在页面 `.wxss` 中编写业务语义类名（如 `.product-card`）。
+- **原子组合**：UI 必须由 `atom.wxss` 中的原子类组合而成。
+- **动态样式例外**：仅当样式值需要通过 JS 动态计算时（如拖拽位置），才允许使用内联 `style`。
 
-1. **禁止行内样式**：严禁使用 `style="margin: 20rpx"`。
-2. **分类定位**：根据样式属性，确定它属于 `atom.wxss` 的哪个区块：
-    - [Layout] 布局
-    - [Spacing] 间距 (m, mt, mb, ml, mr, p, pt, pb, pl, px, py, gap)
-    - [Visual] 视觉 (bg, rounded, border)
-    - [Typography] 字体排版 (text, font)
-    - [Sizing & Position] 尺寸与定位 (w, h, relative, absolute, fixed)
-3. **有序插入**：在对应区块内按数值升序插入。
-4. **同步输出**：在代码回答的末尾，明确告知用户需要将哪段代码插入到 `atom.wxss` 的哪个位置。
+### 3. "活的原子" 维护协议 (分类索引)
 
-### 3. 命名与单位
+当 AI 发现 `atom.wxss` 缺少样式时，必须按以下逻辑处理：
 
-- **单位**：所有尺寸必须使用 `rpx`。
-- **风格**：遵循 Tailwind 风格，如 `mt-20` 代表 `margin-top: 20rpx`，`text-333` 代表 `color: #333333`。
+1. **变量检查**：如果是颜色相关，**必须**引用 `var(--variable-name)`，严禁写死 Hex/RGB 值。
+2. **分类定位**：
+    - [Color] 颜色 (text-brand, bg-main, border-sub) -> **新的一类**
+    - [Layout] 布局 (flex, grid)
+    - [Spacing] 间距 (m, p, gap - 单位 rpx)
+    - [Visual] 视觉 (rounded, opacity)
+    - [Typography] 字体 (text-xs, font-bold)
+    - [Sizing] 尺寸 (w, h)
+3. **输出要求**：明确告知用户：“请将这段代码插入到 `atom.wxss` 的 [Color] 区块”。
+
+### 4. 命名与单位
+
+- **单位**：所有尺寸强制使用 `rpx`。
+- **命名风格**：
+  - 尺寸类：`mt-20` (= 20rpx)
+  - 颜色类：`text-brand`, `bg-white`
+  - 字号类：`text-sm` (= 24rpx), `text-base` (= 28rpx), `text-lg` (= 32rpx)
 
 ## 代码逻辑准则 (TS/JS)
 
-- [cite_start]**防御性编程**：删除操作前必须检查关联性（如检查商品数量 [cite: 66]）。
-- **交互反馈**：长按、成功保存、移动排序等操作必须调用 `wx.vibrateShort()` 提供物理反馈。
-- **简单胜过复杂**：排序逻辑优先使用数组索引交换（Arrow Buttons），除非用户明确要求复杂拖拽。
+- **防御性编程**：删除操作前必须检查关联性。
+- **交互反馈**：长按、保存、排序必须调用 `wx.vibrateShort()`。
+- **简单胜过复杂**：逻辑优先复用现有库，不造轮子。
 
 ## 语言与交互
 

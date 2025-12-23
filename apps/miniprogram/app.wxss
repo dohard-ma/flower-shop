@@ -4,4 +4,16 @@
 /* 统一设置背景色 */
 page {
   background-color: #f4f4f4;
+
+  /* 1. 定义你的品牌语义色 */
+  --brand-color: #1a1a1a;       /* 你的花店粉色 */
+  --brand-color-light: #FFEBEE; /* 浅色背景用 */
+  --text-main: #333333;         /* 主要文字 */
+  --text-sub: #999999;          /* 次要文字 */
+  --border-color: #EEEEEE;      /* 边框色 */
+
+  /* 2. 【借力不造】覆盖 TDesign 的内部变量，让组件库自动跟随你的品牌 */
+  --td-brand-color: var(--brand-color);
+  --td-brand-color-light: var(--brand-color-light);
+  /* 更多 TDesign 变量可查阅官方文档 */
 }

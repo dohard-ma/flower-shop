@@ -12,6 +12,7 @@
 .flex-wrap { flex-wrap: wrap; }
 .flex-1 { flex: 1; }
 .flex-none { flex: none; }
+.flex-shrink-0 { flex-shrink: 0; }
 
 .justify-start { justify-content: flex-start; }
 .justify-end { justify-content: flex-end; }
@@ -63,11 +64,16 @@
 .px-12 { padding-left: 12rpx; padding-right: 12rpx; }
 .px-20 { padding-left: 20rpx; padding-right: 20rpx; }
 .px-30 { padding-left: 30rpx; padding-right: 30rpx; }
+.px-50 { padding-left: 50rpx; padding-right: 50rpx; }
+.px-60 { padding-left: 60rpx; padding-right: 60rpx; }
 
 .py-4 { padding-top: 4rpx; padding-bottom: 4rpx; }
 .py-20 { padding-top: 20rpx; padding-bottom: 20rpx; }
 .py-25 { padding-top: 25rpx; padding-bottom: 25rpx; }
 .py-30 { padding-top: 30rpx; padding-bottom: 30rpx; }
+.pt-60 { padding-top: 60rpx; }
+.pb-40 { padding-bottom: 40rpx; }
+.pb-60 { padding-bottom: 60rpx; }
 .py-100 { padding-top: 100rpx; padding-bottom: 100rpx; }
 
 .pb-100 { padding-bottom: 100rpx; }
@@ -87,14 +93,22 @@
 .bg-333 { background-color: #333333; }
 .bg-mask { background-color: rgba(0, 0, 0, 0.5); }
 .bg-white-10 { background: rgba(255, 255, 255, 0.1); }
+.bg-brand { background-color: #1a1a1a; }
 
 .rounded-sm { border-radius: 8rpx; }
+.rounded { border-radius: 8rpx; }
 .rounded-md { border-radius: 16rpx; }
 .rounded-lg { border-radius: 24rpx; }
+.rounded-3xl { border-radius: 48rpx; }
+.rounded-t-3xl { border-radius: 48rpx 48rpx 0 0; }
 .rounded-full { border-radius: 9999rpx; }
 .overflow-hidden { overflow: hidden; }
 
 .border-1 { border: 1rpx solid #f0f0f0; }
+.border-2 { border: 2rpx solid #f0f0f0; }
+.border-ddd { border: 1rpx solid #dddddd; }
+.border-brand { border: 1rpx solid #1a1a1a; }
+.border-dashed { border-style: dashed; }
 .border-t { border-top: 1rpx solid #f0f0f0; }
 .border-b { border-bottom: 1rpx solid #f0f0f0; }
 
@@ -118,7 +132,7 @@
 .text-gray { color: #6b7280; }
 .text-white { color: #ffffff; }
 .text-price { color: #ff4d4f; }
-.text-brand { color: #07c160; }
+.text-brand { color: #1a1a1a; }
 
 .text-center { text-align: center; }
 .text-right { text-align: right; }
@@ -130,17 +144,24 @@
 .relative { position: relative; }
 .absolute { position: absolute; }
 .fixed { position: fixed; }
+.z-10 { z-index: 10; }
 
 .full-w { width: 100%; }
 .full-h { height: 100%; }
 .h-full { height: 100%; }
+.h-0 { height: 0; }
+.h-80vh { height: 80vh; }
+.h-85vh { height: 85vh; }
 .w-screen { width: 100vw; }
 .h-screen { height: 100vh; }
 
 .w-4 { width: 4rpx; }
 .w-6 { width: 6rpx; }
+.w-32 { width: 32rpx; }
 .w-48 { width: 48rpx; }
+.w-120 { width: 120rpx; }
 .w-128 { width: 128rpx; }
+.w-160 { width: 160rpx; }
 .w-200 { width: 200rpx; }
 .w-340 { width: 340rpx; }
 .w-48p { width: 48%; }
@@ -148,11 +169,16 @@
 .h-4 { height: 4rpx; }
 .h-8 { height: 8rpx; }
 .h-28 { height: 28rpx; line-height: 28rpx; }
+.h-32 { height: 32rpx; }
 .h-40 { height: 40rpx; }
 .h-48 { height: 48rpx; }
 .h-100 { height: 100rpx; }
 .h-128 { height: 128rpx; }
+.h-160 { height: 160rpx; }
 .h-340 { height: 340rpx; }
+
+.top-30 { top: 30rpx; }
+.right-30 { right: 30rpx; }
 
 /* ==================================
   ⚠️ 待废弃/非标样式 (Deprecated)

@@ -6,30 +6,30 @@
                 <!-- 头像 -->
                 <view class="relative">
                     <view class="avatar-ring p-4">
-                        <image src="{{userInfo.avatar}}" class="w-128 h-128 rounded-full" mode="aspectFill" />
+                        <image src="{{isLoggedIn ? (userInfo.avatar || defaultAvatar) : defaultAvatar}}" class="w-128 h-128 rounded-full" mode="aspectFill" />
                     </view>
-                    <view class="avatar-badge">
+                    <view wx:if="{{isLoggedIn && userInfo.badge}}" class="avatar-badge">
                         <text class="text-white text-xs">{{userInfo.badge}}</text>
                     </view>
                 </view>
                 <!-- 用户信息 -->
-                <view>
+                <view bind:tap="{{!isLoggedIn ? 'showLogin' : ''}}">
                     <view class="flex items-center gap-10 mb-4">
-                        <text class="text-xl font-bold text-white">{{userInfo.nickname}}</text>
-                        <view class="user-level">
+                        <text class="text-xl font-bold text-white">{{isLoggedIn ? userInfo.nickname : '点击登录/注册'}}</text>
+                        <view wx:if="{{isLoggedIn}}" class="user-level">
                             <text class="text-xs font-bold">{{userInfo.level}}</text>
                         </view>
                     </view>
-                    <text class="text-xs text-white-40">ID: {{userInfo.userId}}</text>
+                    <text class="text-xs text-white-40">{{isLoggedIn ? 'ID: ' + userInfo.userId : '发现更多精彩内容'}}</text>
                 </view>
             </view>
             <!-- 编辑按钮 -->
-            <view class="edit-icon" bind:tap="onEdit">
+            <view wx:if="{{isLoggedIn}}" class="edit-icon" bind:tap="onEdit">
                 <text class="text-white-80 text-lg">✏️</text>
             </view>
         </view>
         <!-- 等级进度 -->
-        <!-- <view class="mb-30">
+        <view wx:if="{{isLoggedIn && levelInfo.title}}" class="mb-30">
             <view class="flex justify-between items-center mb-10">
                 <text class="text-xs font-bold text-white-90">{{levelInfo.title}}</text>
                 <text class="text-xs text-white-40">
@@ -39,6 +39,92 @@
             <view class="h-8 bg-white-10 rounded-sm overflow-hidden">
                 <view class="progress-fill h-full" style="width: {{levelInfo.percent}}%;"></view>
             </view>
-        </view> -->
+        </view>
     </view>
 </view>
+
+<!-- 登录弹窗 -->
+<t-popup visible="{{showLoginPopup}}" placement="bottom" bind:visible-change="onPopupVisibleChange" shape="round">
+    <view class="login-popup bg-white rounded-t-3xl overflow-hidden relative">
+        <!-- 顶部关闭按钮 -->
+        <view class="absolute right-20 top-20 z-10 p-20" bind:tap="closeLoginPopup">
+            <t-icon name="close" size="40rpx" color="#ccc" />
+        </view>
+
+        <view class="px-50 pt-50 pb-60 mt-30">
+            <!-- 1. 标题区 -->
+            <view class="mb-40 text-center">
+                <view class="text-xl font-bold text-333">完善资料</view>
+                <view class="text-xs text-999 mt-10">请设置头像和昵称以开启服务</view>
+            </view>
+
+            <!-- 2. 头像选择 -->
+            <view class="flex justify-center mb-60">
+                <button class="avatar-wrapper p-0 m-0 bg-none border-none" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+                    <view class="w-160 h-160 rounded-3xl bg-f9 border-2 border-dashed border-ddd flex items-center justify-center overflow-hidden">
+                        <image wx:if="{{tempAvatar}}" class="w-full h-full" src="{{tempAvatar}}" mode="aspectFill" />
+                        <t-icon wx:else name="camera" size="64rpx" color="#bbb" />
+                    </view>
+                </button>
+            </view>
+
+            <!-- 3. 表单字段 -->
+            <view class="mb-60">
+                <view class="flex items-center py-30 border-b border-f5">
+                    <text class="text-base font-bold text-333 w-128">昵称</text>
+                    <t-input
+                        class="flex-1 nickname-input"
+                        placeholder="获取微信昵称"
+                        type="nickname"
+                        value="{{tempNickname}}"
+                        bind:change="onNicknameChange"
+                        borderless
+                        custom-style="padding: 0; font-size: 28rpx; color: #333; font-weight: 500;"
+                        placeholder-style="color: #bbb; font-weight: normal;"
+                    />
+                </view>
+
+                <view class="flex items-center py-30 border-b border-f5 relative">
+                    <text class="text-base font-bold text-333 w-128">手机号</text>
+                    <view class="flex-1">
+                        <button
+                            class="phone-button font-500 {{tempPhone ? 'text-333' : 'text-bbb'}}"
+                            open-type="getPhoneNumber"
+                            bind:getphonenumber="onGetPhoneNumber"
+                        >
+                            {{tempPhone || '获取微信手机号'}}
+                        </button>
+                    </view>
+                </view>
+            </view>
+
+            <!-- 4. 隐私协议 -->
+            <view class="flex items-center gap-16 mb-60" bind:tap="toggleAgreement">
+                <t-checkbox
+                    checked="{{isAgreed}}"
+                    icon="circle"
+                    borderless
+                    class="agreement-checkbox"
+                    style="pointer-events: none;"
+                />
+                <view class="text-sm text-999 flex items-center">
+                    同意 <text class="text-333 font-500 mx-8">《服务协议》</text> 及 <text class="text-333 font-500 mx-8">《隐私保护》</text>
+                </view>
+            </view>
+
+            <!-- 5. 提交按钮 -->
+            <t-button
+                theme="primary"
+                block
+                size="large"
+                loading="{{isSubmitting}}"
+                disabled="{{!tempAvatar || !tempNickname || !tempPhoneCode || !isAgreed}}"
+                bind:tap="onLoginSubmit"
+                custom-style="background: #1a1a1a; border-radius: 12rpx; height: 100rpx; font-size: 32rpx; font-weight: bold; border: none;"
+            >保存资料并登录</t-button>
+        </view>
+
+        <!-- 安全间距 -->
+        <view class="h-40"></view>
+    </view>
+</t-popup>

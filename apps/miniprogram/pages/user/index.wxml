@@ -1,10 +1,17 @@
 <view class="bg-gray pb-100">
     <!-- 1. 用户信息主卡片 -->
     <view class="px-30 mb-20">
-        <profile-card userInfo="{{userInfo}}" levelInfo="{{levelInfo}}" bind:edit="onEdit" />
+        <profile-card
+            id="profileCard"
+            isLoggedIn="{{isLoggedIn}}"
+            userInfo="{{userInfo}}"
+            levelInfo="{{levelInfo}}"
+            bind:edit="onEdit"
+            bind:login-success="onLoginSuccess"
+        />
     </view>
     <!-- 2. 后台管理 -->
-    <view class="px-30 mb-20">
+    <view wx:if="{{!isLoggedIn || isAdmin}}" class="px-30 mb-20">
         <view class="card-round">
             <view class="px-30 py-25">
                 <text class="text-lg font-bold text-333">后台管理</text>
