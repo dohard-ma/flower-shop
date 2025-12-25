@@ -36,7 +36,7 @@ Page({
     this.setData({
       isLoggedIn: !!token,
       userInfo: userInfo || null,
-      isAdmin: userInfo?.isAdmin || false // 假设 userInfo 中有 isAdmin 字段
+      isAdmin: userInfo?.role === 'ADMIN' || false // 假设 userInfo 中有 isAdmin 字段
     });
   },
 
@@ -47,7 +47,7 @@ Page({
         this.setData({
           userInfo: res.data,
           isLoggedIn: true,
-          isAdmin: (res.data as any).isAdmin || false
+          isAdmin: res.data?.role === 'ADMIN' || false
         });
         storage.setItem(STORAGE_KEYS.USER_INFO, res.data);
       }
@@ -74,20 +74,9 @@ Page({
     this.setData({
       isLoggedIn: true,
       userInfo: userInfo,
-      isAdmin: userInfo.isAdmin || false
+      isAdmin: userInfo.role === 'ADMIN' || false
     });
     storage.setItem(STORAGE_KEYS.USER_INFO, userInfo);
-    // 可以在这里刷新其他数据
-  },
-
-  // 编辑资料
-  onEdit() {
-    this.ensureLogin(() => {
-      wx.showToast({
-        title: '编辑资料',
-        icon: 'none'
-      })
-    });
   },
 
   // 全部订单

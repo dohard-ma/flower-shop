@@ -6,49 +6,58 @@ import { WechatService } from '@/lib/wechat';
 import { generateToken } from '@/lib/auth/jwt';
 import { UserRole } from '@/lib/auth/types';
 import { generateDisplayId, IdType } from '@/lib/id-generator';
-
-const loginSchema = z.object({
-  code: z.string().min(1, 'code 不能为空'),
-});
+import { uploadImage, generateUniqueFilename, OSS_DIR } from '@/lib/qiniu';
 
 export async function POST(request: NextRequest) {
   const traceId = request.headers.get('X-Trace-ID')!;
   const appId = request.headers.get('x-wechat-appid')!;
+  const contentType = request.headers.get('content-type') || '';
 
   try {
-    const body = await request.json();
-    const validation = loginSchema.safeParse(body);
+    let code: string;
+    let phoneCode: string | null = null;
+    let nickname: string | null = null;
+    let avatarFile: File | null = null;
 
-    if (!validation.success) {
-      return ApiResponseBuilder.error(traceId, '参数错误', 400);
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      code = formData.get('code') as string;
+      phoneCode = formData.get('phoneCode') as string | null;
+      nickname = formData.get('nickname') as string | null;
+      avatarFile = formData.get('avatar') as File | null;
+    } else {
+      const body = await request.json();
+      code = body.code;
+      phoneCode = body.phoneCode;
+      nickname = body.nickname;
+      // JSON 模式下不支持直接传文件，除非是 base64，这里暂不处理
     }
 
-    const { code } = validation.data;
+    if (!code) {
+      return ApiResponseBuilder.error(traceId, 'code 不能为空', 400);
+    }
 
     // 1. 确定店铺信息并获取 AppSecret
     let store = await prisma.store.findUnique({
       where: { appId }
     });
 
-    // 如果店铺不存在，创建一个默认店铺 (方便本地测试)
     if (!store) {
       store = await prisma.store.create({
         data: {
           name: '默认花店',
           code: 'H',
           appId: appId,
-          appSecret: process.env.WECHAT_SECRET // 只有默认店铺使用环境变量的 Secret
+          appSecret: process.env.WECHAT_SECRET
         }
       });
     }
 
-    // 2. 调用微信接口换取 openid
-    let openid: string;
-    // 优先使用店铺配置的 Secret
     const appSecret = store.appSecret || process.env.WECHAT_SECRET;
 
+    // 2. 调用微信接口换取 openid
+    let openid: string;
     if (process.env.NODE_ENV === 'development' && !appSecret) {
-      console.warn('未配置微信凭证，开发环境下使用模拟 openid');
       openid = `mock-openid-${code}`;
     } else {
       const session = await WechatService.code2Session(code, appId, appSecret);
@@ -58,7 +67,34 @@ export async function POST(request: NextRequest) {
       openid = session.openid;
     }
 
-    // 3. 查找或创建用户
+    // 3. 处理手机号 (如果有 phoneCode)
+    let phoneNumber: string | undefined;
+    if (phoneCode && phoneCode !== 'undefined') {
+      try {
+        const phoneRes = await WechatService.getPhoneNumber(phoneCode, appId, appSecret);
+        if (phoneRes.errcode === 0 && phoneRes.phone_info) {
+          phoneNumber = phoneRes.phone_info.phoneNumber;
+        } else {
+          console.error('[GetPhoneNumber Error]:', phoneRes);
+        }
+      } catch (err) {
+        console.error('[GetPhoneNumber Exception]:', err);
+      }
+    }
+
+    // 4. 处理头像上传 (如果有文件)
+    let avatarUrl: string | undefined;
+    if (avatarFile) {
+      try {
+        const buffer = Buffer.from(await avatarFile.arrayBuffer());
+        const filename = generateUniqueFilename(avatarFile.name || 'avatar.png', 'avatar');
+        avatarUrl = await uploadImage(buffer, filename, OSS_DIR.USERS.AVATAR);
+      } catch (err) {
+        console.error('[Avatar Upload Error]:', err);
+      }
+    }
+
+    // 5. 查找或创建用户
     let user = await prisma.user.findUnique({
       where: {
         openid_storeId: {
@@ -69,20 +105,34 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      // 创建新用户
       const displayId = await generateDisplayId(store.code, IdType.USER);
       user = await prisma.user.create({
         data: {
           openid,
           storeId: store.id,
           displayId,
-          role: 'USER', // 默认角色
+          role: 'USER',
+          nickname: nickname || undefined,
+          avatar: avatarUrl || undefined,
+          phone: phoneNumber || undefined,
         }
       });
+    } else {
+      // 如果用户已存在，更新信息
+      const updateData: any = {};
+      if (nickname) updateData.nickname = nickname;
+      if (avatarUrl) updateData.avatar = avatarUrl;
+      if (phoneNumber) updateData.phone = phoneNumber;
+
+      if (Object.keys(updateData).length > 0) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: updateData
+        });
+      }
     }
 
-    // 4. 生成 JWT Token
-    // 将 DB 中的 role (USER/ADMIN) 映射到 UserRole enum (user/admin)
+    // 6. 生成 JWT Token
     const roleMap: Record<string, UserRole> = {
       'USER': UserRole.USER,
       'ADMIN': UserRole.ADMIN
@@ -95,7 +145,7 @@ export async function POST(request: NextRequest) {
       username: user.nickname || '微信用户',
       role: mappedRole,
       storeId: user.storeId,
-    }, UserRole.USER); // 统一使用小程序用户的 token 配置 (secret/issuer)
+    }, UserRole.USER);
 
     return ApiResponseBuilder.success(traceId, {
       ...user,

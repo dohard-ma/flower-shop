@@ -16,11 +16,11 @@
                 <view bind:tap="{{!isLoggedIn ? 'showLogin' : ''}}">
                     <view class="flex items-center gap-10 mb-4">
                         <text class="text-xl font-bold text-white">{{isLoggedIn ? userInfo.nickname : '点击登录/注册'}}</text>
-                        <view wx:if="{{isLoggedIn}}" class="user-level">
+                        <view wx:if="{{isLoggedIn && userInfo.level}}" class="user-level">
                             <text class="text-xs font-bold">{{userInfo.level}}</text>
                         </view>
                     </view>
-                    <text class="text-xs text-white-40">{{isLoggedIn ? 'ID: ' + userInfo.userId : '发现更多精彩内容'}}</text>
+                    <text class="text-xs text-white-40">{{isLoggedIn ? 'ID: ' + userInfo.displayId : '发现更多精彩内容'}}</text>
                 </view>
             </view>
             <!-- 编辑按钮 -->
@@ -120,7 +120,6 @@
                 loading="{{isSubmitting}}"
                 disabled="{{!tempAvatar || !tempNickname || !tempPhoneCode || !isAgreed}}"
                 bind:tap="onLoginSubmit"
-                custom-style="background: #1a1a1a; border-radius: 12rpx; height: 100rpx; font-size: 32rpx; font-weight: bold; border: none;"
             >保存资料并登录</t-button>
         </view>
 

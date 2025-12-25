@@ -71,6 +71,11 @@ export const decryptPhoneNumber = async (code: string, encryptedData: string, iv
 }
 
 
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN'
+}
+
 // 用户信息类型定义
 export interface UserInfo {
   id: number;
@@ -88,25 +93,14 @@ export interface UserInfo {
   wallet?: any;
   alwaysAllowSubscriptionKeys?: string[];
   allowSubscription?: boolean;
-  address?: {
-    nationalCode: string;
-    userName: string;
-    nationalCodeFull: string;
-    telNumber: string;
-    postalCode: string;
-    provinceName: string;
-    cityName: string;
-    countyName: string;
-    streetName: string;
-    detailInfoNew: string;
-    detailInfo: string;
-  }
+  role: UserRole;
 }
 
 // 更新用户信息参数
 export interface UpdateUserParams {
   nickname?: string;
   name?: string;
+  avatar?: string;
   phone?: string;
   gender?: number;
   birthday?: string;
@@ -143,25 +137,61 @@ export function updateUserInfo(data: UpdateUserParams): Promise<ApiResponse<User
 }
 
 /**
- * 上传头像
+ * 登录并注册/更新用户信息
  */
-export async function uploadAvatarApi(filePath: string): Promise<ApiResponse<{ avatarUrl: string }>> {
+export async function loginAndRegister(params: {
+  code: string;
+  phoneCode?: string;
+  nickname?: string;
+  avatarPath?: string;
+}): Promise<ApiResponse<UserInfo & { token: string }>> {
+  const accountInfo = wx.getAccountInfoSync();
+  const appId = accountInfo.miniProgram.appId;
+
   return new Promise((resolve, reject) => {
-    wx.uploadFile({
-      url: `${API_BASE_URL}/user/avatar`,
-      filePath: filePath,
-      name: 'image',
-      header: {
-        'Authorization': `Bearer ${storage.getItem(STORAGE_KEYS.AUTH_TOKEN)}`
-      },
-      success: (res) => {
-        console.log(res);
-        resolve(JSON.parse(res.data));
-      },
-      fail: (err) => {
-        reject(err);
-      }
-    });
+    // 如果有头像，使用 uploadFile (multipart/form-data)
+    if (params.avatarPath) {
+      wx.uploadFile({
+        url: `${API_BASE_URL}/users`,
+        filePath: params.avatarPath,
+        name: 'avatar',
+        header: {
+          'x-wechat-appid': appId,
+        },
+        formData: {
+          code: params.code,
+          phoneCode: params.phoneCode || '',
+          nickname: params.nickname || '',
+        },
+        success: (res) => {
+          try {
+            const data = JSON.parse(res.data);
+            resolve(data);
+          } catch (e) {
+            reject(new Error('解析响应失败'));
+          }
+        },
+        fail: reject,
+      });
+    } else {
+      // 如果没有头像，使用普通 request (application/json)
+      wx.request({
+        url: `${API_BASE_URL}/users`,
+        method: 'POST',
+        header: {
+          'x-wechat-appid': appId,
+        },
+        data: {
+          code: params.code,
+          phoneCode: params.phoneCode,
+          nickname: params.nickname,
+        },
+        success: (res) => {
+          resolve(res.data as ApiResponse<UserInfo & { token: string }>);
+        },
+        fail: reject,
+      });
+    }
   });
 }
 

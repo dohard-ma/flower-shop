@@ -26,6 +26,9 @@ interface DownloadTokenResponse {
   };
 }
 
+const accountInfo = wx.getAccountInfoSync();
+const appId = accountInfo.miniProgram.appId;
+
 // 获取七牛云上传token
 export async function getQiniuToken(type: 'private' | 'public' = 'public'): Promise<{
   token: string;
@@ -37,6 +40,7 @@ export async function getQiniuToken(type: 'private' | 'public' = 'public'): Prom
       url: `${API_BASE_URL}/file/token?type=${type}`,
       header: {
         Authorization: `Bearer ${wx.getStorageSync(AUTH_TOKEN_STORAGE_KEY)}`,
+        'x-wechat-appid': appId,
       },
       method: 'GET',
       success: ({ data }) => {

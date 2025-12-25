@@ -1,5 +1,5 @@
-import { storage, STORAGE_KEYS } from '../../utils/storage';
-import { updateUserInfo, uploadAvatarApi } from '../../utils/apis/user';
+import { storage, STORAGE_KEYS } from '@/utils/storage';
+import { loginAndRegister } from '../../utils/apis/user';
 
 Component({
   properties: {
@@ -14,7 +14,8 @@ Component({
         badge: '',
         nickname: '',
         level: '',
-        userId: ''
+        userId: '',
+        displayId: ''
       }
     },
     levelInfo: {
@@ -108,23 +109,25 @@ Component({
       wx.showLoading({ title: '登录中...' });
 
       try {
-        // ... 原有逻辑 ...
-        // 1. 上传头像
-        let finalAvatar = tempAvatar;
-        if (tempAvatar.startsWith('http://tmp/') || tempAvatar.startsWith('wxfile://')) {
-          const uploadRes = await uploadAvatarApi(tempAvatar);
-          finalAvatar = uploadRes.data.avatarUrl;
-        }
+        // 1. 获取登录 code
+        const { code } = await wx.login();
 
-        // 2. 更新用户信息
-        const updateRes = await updateUserInfo({
+        // 2. 调用统一登录注册接口
+        const loginRes = await loginAndRegister({
+          code,
+          phoneCode: tempPhoneCode,
           nickname: tempNickname,
-          phone: tempPhoneCode,
+          avatarPath: tempAvatar,
         });
 
-        if (updateRes.success) {
+        if (loginRes.success) {
           wx.showToast({ title: '登录成功', icon: 'success' });
           wx.vibrateShort({ type: 'medium' });
+
+          // 保存 token 和用户信息
+          storage.setItem(STORAGE_KEYS.AUTH_TOKEN, loginRes.data.token);
+          storage.setItem(STORAGE_KEYS.USER_INFO, loginRes.data);
+
           this.setData({
             showLoginPopup: false,
             tempAvatar: '',
@@ -133,7 +136,7 @@ Component({
             tempPhoneCode: '',
             isAgreed: false
           });
-          this.triggerEvent('login-success', updateRes.data);
+          this.triggerEvent('login-success', loginRes.data);
         }
       } catch (error) {
         console.error('登录失败:', error);
