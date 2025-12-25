@@ -14,7 +14,7 @@ export const categoryApi = {
   // 获取所有分类 (管理员用)
   getList() {
     return request<Category[]>({
-      url: '/wx/admin/categories',
+      url: '/admin/categories',
       method: 'GET'
     });
   },
@@ -22,7 +22,7 @@ export const categoryApi = {
   // 获取公开可见的分类 (浏览用)
   getPublicList() {
     return request<Category[]>({
-      url: '/wx/public/categories',
+      url: '/public/categories',
       method: 'GET'
     });
   },
@@ -30,7 +30,7 @@ export const categoryApi = {
   // 创建分类
   create(data: Partial<Category>) {
     return request<Category>({
-      url: '/wx/admin/categories',
+      url: '/admin/categories',
       method: 'POST',
       data
     });
@@ -39,7 +39,7 @@ export const categoryApi = {
   // 更新分类
   update(data: Partial<Category> & { id: string }) {
     return request<Category>({
-      url: '/wx/admin/categories',
+      url: '/admin/categories',
       method: 'PUT',
       data
     });
