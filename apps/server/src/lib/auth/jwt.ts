@@ -58,22 +58,35 @@ export async function verifyToken(
   token: string,
   role: UserRole
 ): Promise<JWTPayload> {
-  try {
-    const config = JWT_CONFIG[role];
+  const tryVerify = async (targetRole: UserRole) => {
+    const config = JWT_CONFIG[targetRole];
     const secret = new TextEncoder().encode(config.secret);
-
     const { payload } = await jwtVerify(token, secret, {
       issuer: config.issuer
     });
+    return payload as unknown as JWTPayload;
+  };
 
-    // 验证逻辑：
-    // 1. 如果要求的是 ADMIN Token 类型，则 payload.role 必须是 admin
-    // 2. 如果要求的是 USER Token 类型，则 payload.role 可以是 user 或 admin
+  try {
+    // 1. 首先尝试用要求的角色对应的密钥验证
+    let payload: JWTPayload;
+    try {
+      payload = await tryVerify(role);
+    } catch (e) {
+      // 2. 如果要求的角色是 USER，但验证失败，则尝试用 ADMIN 密钥验证（Admin 也是 User）
+      if (role === UserRole.USER) {
+        payload = await tryVerify(UserRole.ADMIN);
+      } else {
+        throw e;
+      }
+    }
+
+    // 3. 角色校验：如果是 ADMIN 接口，必须是 admin 角色
     if (role === UserRole.ADMIN && payload.role !== UserRole.ADMIN) {
       throw new Error('Invalid role');
     }
 
-    return payload as unknown as JWTPayload;
+    return payload;
   } catch (error) {
     throw new Error('Invalid token');
   }

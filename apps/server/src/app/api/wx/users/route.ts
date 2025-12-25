@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       username: user.nickname || '微信用户',
       role: mappedRole,
       storeId: user.storeId,
-    }, UserRole.USER);
+    }, mappedRole);
 
     return ApiResponseBuilder.success(traceId, {
       ...user,

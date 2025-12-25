@@ -2,14 +2,6 @@ import { API_BASE_URL } from '../../config/index';
 import { storage, STORAGE_KEYS } from '../storage';
 import { request } from './index';
 
-// 添加登录相关类型
-type LoginResponse = {
-  success: boolean;
-  data: UserInfo & {
-    token: string;
-  };
-};
-
 export async function getUserToken(): Promise<string | null> {
   const token = storage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   if (token) {
@@ -29,30 +21,17 @@ export async function silentLogin(): Promise<void> {
       throw new Error('登录失败');
     }
 
-    // 发送 code 到服务器
-    const accountInfo = wx.getAccountInfoSync();
-    const appId = accountInfo.miniProgram.appId;
+    // 使用统一登录接口
+    const response = await loginAndRegister({
+      code: loginRes.code
+    });
 
-    const { data } = await new Promise<WechatMiniprogram.RequestSuccessCallbackResult>(
-      (resolve, reject) => {
-        wx.request({
-          url: `${API_BASE_URL}/users`,
-          method: 'POST',
-          data: { code: loginRes.code },
-          header: {
-            'x-wechat-appid': appId
-          },
-          success: resolve,
-          fail: reject,
-        });
-      }
-    );
-
-    const response = data as LoginResponse;
-    if (response?.data?.token) {
+    if (response?.success && response?.data?.token) {
       storage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
+      storage.setItem(STORAGE_KEYS.USER_INFO, response.data);
+    } else {
+      throw new Error(response?.message || '登录失败');
     }
-    storage.setItem(STORAGE_KEYS.USER_INFO, response.data);
 
   } catch (error) {
     console.error('静默登录失败:', error);

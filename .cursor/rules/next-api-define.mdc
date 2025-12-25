@@ -22,9 +22,19 @@ alwaysApply: false
 | :--- | :--- | :--- | :--- |
 | `/api/public` | 无需登录 | **不需要** | 全局公共接口 |
 | `/api/wx/public` | 无需登录 | **必须** | 小程序端免登录接口 (如：商品展示) |
+| `/api/wx/users` | 无需登录 | **必须** | 小程序登录/注册接口 |
 | `/api/wx` | 需登录 (User/Admin) | **必须** | 小程序端用户接口 (如：我的订单) |
 | `/api/wx/admin` | 需登录 (Admin) | **必须** | 小程序端管理员接口 (如：分类管理) |
-| `/api/admin` | 需登录 | **不需要** | PC 管理后台接口 |
+| `/api/admin` | 需登录 (Admin) | **不需要** | PC 管理后台接口 |
+
+### 2.1 角色兼容性逻辑 (Super-User)
+
+项目采用“管理员向下兼容”的权限策略：
+- **Admin 角色** 签发的 Token 使用 `JWT_ADMIN_SECRET`。
+- **User 角色** 签发的 Token 使用 `JWT_USER_SECRET`。
+- **验证逻辑**：
+  - 在 `/api/wx`（普通用户路径）下，中间件会优先尝试 User 密钥，若失败则尝试 Admin 密钥。**这意味着管理员可以正常使用所有普通用户功能**。
+  - 在 `/api/wx/admin` 或 `/api/admin`（管理路径）下，仅接受 Admin 角色且必须使用 Admin 密钥验证。
 
 ## 3. 上下文获取 (Context Injection)
 
@@ -36,7 +46,7 @@ function getContext(request: NextRequest) {
     traceId: request.headers.get('X-Trace-ID')!, // 必有
     appId: request.headers.get('x-wechat-appid'), // 仅 /api/wx/** 有
     userId: request.headers.get('x-user-id'),     // 仅需登录接口有
-    role: request.headers.get('x-user-role'),      // 仅需登录接口有
+    role: request.headers.get('x-user-role') as 'admin' | 'user', // 角色值为小写
     storeId: request.headers.get('x-store-id'),    // 仅需登录接口有
   };
 }

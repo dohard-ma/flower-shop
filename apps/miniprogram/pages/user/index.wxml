@@ -11,7 +11,7 @@
         />
     </view>
     <!-- 2. 后台管理 -->
-    <view wx:if="{{!isLoggedIn || isAdmin}}" class="px-30 mb-20">
+    <view wx:if="{{isAdmin}}" class="px-30 mb-20">
         <view class="card-round">
             <view class="px-30 py-25">
                 <text class="text-lg font-bold text-333">后台管理</text>
