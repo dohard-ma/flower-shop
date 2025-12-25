@@ -33,7 +33,7 @@ export const productApi = {
   // 获取产品列表 (公开浏览)
   getPublicList(params?: ProductListParams) {
     return request<PaginatedResult<Product>>({
-      url: '/wx/public/products',
+      url: '/public/products',
       method: 'GET',
       data: params
     });
@@ -42,7 +42,7 @@ export const productApi = {
   // 获取产品详情 (公开浏览)
   getPublicDetail(id: string) {
     return request<Product>({
-      url: `/wx/public/products/${id}`,
+      url: `/public/products/${id}`,
       method: 'GET'
     });
   }

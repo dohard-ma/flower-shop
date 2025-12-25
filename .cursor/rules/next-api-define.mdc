@@ -30,6 +30,7 @@ alwaysApply: false
 ### 2.1 角色兼容性逻辑 (Super-User)
 
 项目采用“管理员向下兼容”的权限策略：
+
 - **Admin 角色** 签发的 Token 使用 `JWT_ADMIN_SECRET`。
 - **User 角色** 签发的 Token 使用 `JWT_USER_SECRET`。
 - **验证逻辑**：

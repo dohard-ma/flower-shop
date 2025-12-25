@@ -3,24 +3,10 @@
   <view class="px-30 py-20 bg-white">
     <t-search value="{{searchValues}}" placeholder="搜索商品" bind:change="onSearch" />
   </view>
-  <!-- 2. 顶级分类切换 (订花 / 周边商城) -->
-  <!-- <view class="flex-row justify-around items-center pb-20 bg-white" style="border-bottom: 1rpx solid #f0f0f0;">
-    <block wx:for="{{topTabs}}" wx:key="value">
-      <view class="flex-col items-center relative py-10" bind:tap="onTopTabChange" data-value="{{item.value}}">
-        <view class="text-xl font-bold {{activeTopTab === item.value ? 'text-333' : 'text-999'}}" style="transition: all 0.3s;">
-          {{item.label}}
-        </view>
-        <view class="text-xs {{activeTopTab === item.value ? 'text-666' : 'text-999'}} mt-5">
-          {{item.subLabel}}
-        </view>
-        <view wx:if="{{activeTopTab === item.value}}" class="absolute rounded-full" style="bottom: -10rpx; background-color: #333; width: 50rpx; height: 6rpx;"></view>
-      </view>
-    </block>
-  </view> -->
   <!-- 3. 主体内容区 -->
   <view class="flex-row flex-1 overflow-hidden">
     <!-- 左侧分类导航 -->
-    <scroll-view scroll-y class="h-full bg-gray w-200">
+    <scroll-view scroll-y class="h-full bg-gray w-200 flex-shrink-0">
       <block wx:for="{{sidebarItems}}" wx:key="id">
         <view class="relative flex items-center py-20 px-20 {{ (item.level === 0 && (item.id === expandedParentId || item.id === activeSidebarValue)) || (item.level === 1 && item.parentId === expandedParentId) ? 'bg-white' : '' }}" bind:tap="onCategoryChange" data-id="{{item.id}}">
           <!-- 一级分类选中的左侧竖条指示器 -->
@@ -33,34 +19,38 @@
       </block>
     </scroll-view>
     <!-- 右侧商品列表 -->
-    <scroll-view scroll-y class="flex-1 h-full bg-white px-20 pt-30 pb-20">
+    <scroll-view scroll-y class="flex-1 h-full bg-white px-20 pt-30 pb-20" bindscrolltolower="onScrollToLower">
       <!-- 当前选中分类的大标题 -->
       <view class="text-lg font-bold mb-30 ml-10 text-333">{{activeSidebarItem.label || ''}}</view>
       <!-- 商品网格 -->
-      <view class="flex-row flex-wrap justify-between">
+      <view class="flex-row flex-wrap justify-start gap-20">
         <block wx:for="{{displayProducts}}" wx:key="id">
-          <view class="flex-col mb-40 w-48p">
-            <view class="relative rounded-md overflow-hidden bg-gray h-340">
-              <image src="{{item.image}}" mode="aspectFill" class="full-w full-h" />
+          <view class="flex-col mb-40 w-235">
+            <view class="relative rounded-md overflow-hidden bg-gray h-320">
+              <image src="{{item.images[0]}}" mode="aspectFill" class="full-w full-h" />
             </view>
             <view class="mt-15 px-5">
               <view class="text-base font-bold text-333 truncate">{{item.name}}</view>
-              <view class="text-xs text-999 truncate mt-5">{{item.desc}}</view>
+              <view class="text-xs text-999 truncate mt-5">{{item.description}}</view>
               <view class="flex-row justify-between items-center mt-15">
                 <view class="flex-row items-center">
                   <text class="text-xs font-bold text-333">¥</text>
-                  <text class="text-lg font-bold text-333 ml-5">{{item.price}}</text>
-                  <view wx:if="{{item.vip}}" class="ml-10 bg-333 text-white rounded-sm flex items-center justify-center text-sm p-2-8 h-28">
-                    VIP
-                  </view>
+                  <text class="text-lg font-bold text-333 ml-5">{{item.priceRef}}</text>
                 </view>
                 <t-icon name="add-circle-filled" size="44rpx" color="#333" />
               </view>
             </view>
           </view>
         </block>
-        <view wx:if="{{displayProducts.length === 0}}" class="full-w py-100 text-center text-999 text-sm">
+        <view wx:if="{{displayProducts.length === 0 && !loading}}" class="full-w py-100 text-center text-999 text-sm">
           该分类下暂无商品
+        </view>
+        <!-- 加载更多状态 -->
+        <view wx:if="{{pagination.loadingMore}}" class="full-w py-20 text-center text-999 text-xs">
+          正在加载更多...
+        </view>
+        <view wx:if="{{!pagination.hasMore && displayProducts.length > 0}}" class="full-w py-20 text-center text-ccc text-xs">
+          没有更多商品了
         </view>
       </view>
       <view class="h-100"></view>

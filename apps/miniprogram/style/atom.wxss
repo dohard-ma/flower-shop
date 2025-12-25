@@ -131,6 +131,7 @@
 .text-999 { color: #999999; }
 .text-gray { color: #6b7280; }
 .text-white { color: #ffffff; }
+.text-ccc { color: #cccccc; }
 .text-price { color: #ff4d4f; }
 .text-brand { color: #1a1a1a; }
 
@@ -163,6 +164,7 @@
 .w-128 { width: 128rpx; }
 .w-160 { width: 160rpx; }
 .w-200 { width: 200rpx; }
+.w-235 { width: 235rpx; }
 .w-340 { width: 340rpx; }
 .w-48p { width: 48%; }
 
@@ -175,6 +177,7 @@
 .h-100 { height: 100rpx; }
 .h-128 { height: 128rpx; }
 .h-160 { height: 160rpx; }
+.h-320 { height: 320rpx; }
 .h-340 { height: 340rpx; }
 
 .top-30 { top: 30rpx; }
