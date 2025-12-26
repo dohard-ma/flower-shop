@@ -21,6 +21,21 @@ import { IconAlertCircle, IconQrcode, IconLock } from '@tabler/icons-react';
 import { http } from '@/lib/request';
 import Image from 'next/image';
 
+// 简单的 Cookie 操作工具
+const setCookie = (name: string, value: string, days: number) => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+};
+
+const getCookie = (name: string) => {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  return null;
+};
+
 function LoginContent() {
   const [loginMode, setLoginMode] = useState<'qrcode' | 'password'>('qrcode');
   const [username, setUsername] = useState('');
@@ -38,6 +53,14 @@ function LoginContent() {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const loginModeRef = useRef(loginMode);
+
+  // 检查是否已经登录
+  useEffect(() => {
+    const token = getCookie('session_token');
+    if (token) {
+      router.push('/dashboard');
+    }
+  }, [router]);
 
   useEffect(() => {
     loginModeRef.current = loginMode;
@@ -80,8 +103,12 @@ function LoginContent() {
           setStatus(newStatus);
         }
 
-        if (newStatus === 'CONFIRMED') {
+        if (newStatus === 'CONFIRMED' && res.data.token) {
           if (timerRef.current) clearInterval(timerRef.current);
+
+          // 重要：手动设置 Cookie
+          setCookie('session_token', res.data.token, 1);
+
           router.push('/dashboard');
         } else if (newStatus === 'EXPIRED') {
           if (timerRef.current) clearInterval(timerRef.current);
