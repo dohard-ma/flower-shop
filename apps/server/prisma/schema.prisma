@@ -6,178 +6,203 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-// ------------------------------------------
-// 1. 店铺表 (租户核心)
-// ------------------------------------------
+
+// ==========================================
+// 1. 核心租户体系
+// ==========================================
+
 model Store {
-  id          String     @id @default(cuid())
-  name        String     // 店铺名称 (如: 花间里)
-  code        String     @unique // 店铺英文标识 (如: H)，用于生成展示编号
+  id            String   @id @default(cuid())
+  name          String   // 店铺名称 (如: 花间里)
+  code          String   @unique // 店铺英文标识 (如: H)，用于生成展示编号
 
-  appId       String     @unique // 微信小程序 AppID (用于路由识别)
-  appSecret   String?    // 微信小程序 AppSecret (用于多租户动态调用)
+  // --- 微信小程序配置 ---
+  appId         String   @unique // 小程序 AppID (多租户路由核心)
+  appSecret     String?  // 小程序 AppSecret
 
-  // --- 支付配置 (未来扩展) ---
-  // 如果你要做微信支付服务商模式或独立支付，还需要存商户号
-  mchId       String?  // 商户号
-  mchKey      String?  // 支付密钥 V3
+  // --- 支付配置 (预留) ---
+  mchId         String?  // 商户号
+  mchKey        String?  // 支付密钥 V3
 
   // --- 租户状态 ---
-  isActive    Boolean  @default(true) // 欠费了/到期了，可以一键关停这个租户
+  isActive      Boolean  @default(true) // 租户状态开关
 
-  users       User[]
-  categories  Category[]
-  products    Product[]
-  showcaseMenus ShowcaseMenu[]
+  // --- 关联关系 ---
+  users         User[]
+  products      Product[]
+  productStyles   ProductStyle[]   // ✅ 对应 ProductStyle
+  storeCategories StoreCategory[]  // ✅ 对应 StoreCategory
+  loginTickets  LoginTicket[]
 
-  createdAt   DateTime   @default(now())
+  createdAt     DateTime @default(now())
   @@map("stores")
 }
 
-// ------------------------------------------
-// 2. 全局流水号计数器 (大一统流水线)
-// ------------------------------------------
-// ... (existing SystemSequence model) ...
+// ==========================================
+// 2. 用户与权限体系
+// ==========================================
 
-// ... (existing User, Category, Product models) ...
+model User {
+  id          String   @id @default(cuid())
 
-// ------------------------------------------
-// 5. 扫码登录票据
-// ------------------------------------------
+  // --- 租户隔离 ---
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id])
+
+  displayId   String   @unique // 员工展示ID (如: H-1001)
+
+  // --- 身份认证 ---
+  openid      String?  // 微信 OpenID (小程序登录核心)
+  password    String?  // 密码 (备用，加密存储)
+  role        String   @default("USER") // 角色: USER(员工), ADMIN(店长)
+
+  // --- 基础信息 ---
+  nickname    String?  // 昵称
+  avatar      String?  // 头像
+  phone       String?  // 手机号
+  gender      Int      @default(0)
+  birthday    String?
+  city        String?
+  province    String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([openid, storeId]) // 同一个微信用户在不同店铺可以是不同身份
+  @@map("users")
+}
+
 model LoginTicket {
   id        String   @id @default(cuid())
   storeId   String
-  scene     String?  // 额外场景信息
-  status    String   @default("PENDING") // PENDING, SCANNED, CONFIRMED, EXPIRED, CANCELLED
-  openid    String?
-  userId    String?
-  token     String?  @db.Text // 登录后的 JWT token
+
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  scene     String?  // 扫码场景值
+  status    String   @default("PENDING") // PENDING, SCANNED, CONFIRMED, EXPIRED
+
+  openid    String?  // 扫码者的 OpenID
+  userId    String?  // 确认后的 UserID
+  token     String?  @db.Text // 登录成功后签发的 Token
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
   expiresAt DateTime
+  updatedAt DateTime @updatedAt
 
   @@map("login_tickets")
 }
 
-// ------------------------------------------
-// 6. 橱窗菜单 (左侧导航装修)
-// ------------------------------------------
-model ShowcaseMenu {
+// ==========================================
+// 3. 商品与库存体系 (Inventory)
+// ==========================================
+
+// [改名] 物理款式表 (原 Category)
+// 对应美团的 "款式"：花束、花盒、花篮
+// 逻辑：1对1，扁平结构 (去掉树状层级，因为款式很少)
+model ProductStyle {
+  id          String    @id @default(cuid())
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id])
+
+  name        String    // 如: "韩式花束", "手提花盒", "开业花篮"
+  sortOrder   Int       @default(0)
+
+  // 关联：一个款式对应多个商品
+  products    Product[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("product_styles") // 表名变更
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id])
+
+  displayId     String   @unique // 商品展示短号
+
+  // --- 基础信息 ---
+  name          String   // 商品名称
+  description   String?  @db.Text
+  images        Json     // 图片列表
+  status        String   @default("ACTIVE") // ACTIVE(上架), INACTIVE(下架/草稿)
+
+  // --- 价格与成本 (BOM) ---
+  priceRef      Decimal  @default(0.00) @db.Decimal(10, 2) // 展示价格 (缓存计算结果)
+  materials     Json     // 花材配方 (BOM)
+
+  // --- 规格属性 ---
+  size          String?  // 尺寸
+  colorSeries   String?  // 色系 (RED, PINK...)
+
+  // --- 1. 款式 (物理形态) ---
+  // 对应美团的 "款式"，必选，单选
+  styleId       String?   // [变更] 从 categoryId 改名
+  style         ProductStyle? @relation(fields: [styleId], references: [id])
+
+  // --- 2. 店内分类 (营销展示) ---
+  // 对应美团的 "店内分类"，多选
+  categories    CategoryOnProduct[] // [变更] 语义更清晰
+
+  // --- 旧数据保留 ---
+  storeCode     String?  // 商家自定义编码
+  sortOrder     Int      @default(0) // 全局默认排序
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("products")
+}
+
+// ==========================================
+// 4. 营销与展示体系 (Showcase)
+// ==========================================
+
+// [改名] 店内分类表 (原 ShowcaseCategory)
+// 对应美团的 "店内分类"：热销、七夕、送女友
+// 逻辑：多对多，支持批量操作
+model StoreCategory {
   id          String   @id @default(cuid())
   storeId     String
   store       Store    @relation(fields: [storeId], references: [id])
-  name        String
 
-  // 筛选规则 (单规则)
-  type        String   // "TAG" | "CATEGORY" | "FEATURE"
-  targetValue String   // "BIRTHDAY" | "cuid_123" | "IS_HOT"
-
+  name        String   // 如: "七夕限定"
+  icon        String?
   sortOrder   Int      @default(0)
   isVisible   Boolean  @default(true)
 
+  products    CategoryOnProduct[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("showcase_menus")
+  @@map("store_categories") // 表名变更
 }
 
-// ------------------------------------------
-// 2. 全局流水号计数器 (大一统流水线)
-// ------------------------------------------
+// 关联表 (Join Table)
+model CategoryOnProduct {
+  productId   String
+  product     Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  categoryId  String
+  category    StoreCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  sortOrder   Int    @default(0) // 在该分类下的自定义排序
+
+  @@id([productId, categoryId])
+  @@map("categories_on_products")
+}
+
+// ==========================================
+// 5. 基础设施
+// ==========================================
+
+// 全局流水号 (用于生成短ID)
 model SystemSequence {
-  id          Int      @id @default(autoincrement()) // 核心：全局唯一的自增流水
+  id          Int      @id @default(autoincrement())
   createdAt   DateTime @default(now())
 
   @@map("system_sequences")
-}
-
-// ------------------------------------------
-// 2. 用户表 (权限与隔离)
-// ------------------------------------------
-model User {
-  id          String   @id @default(cuid())
-  storeId     String   // 强制关联店铺ID
-  store       Store    @relation(fields: [storeId], references: [id])
-
-  displayId   String   @unique // 唯一展示ID (如: H-1001)，用于登录用户名
-
-  // --- 登录凭证 ---
-  openid      String?  // 微信用户唯一标识 (可选)
-  password    String?  // 密码 (加密存储)
-
-  nickname    String?  // 用户昵称
-  avatar      String?  // 用户头像URL
-  phone       String?  // 手机号
-  gender      Int      @default(0) // 性别: 0-未知, 1-男, 2-女
-  birthday    String?  // 生日
-  city        String?  // 城市
-  province    String?  // 省份
-  role        String   @default("USER") // 角色：USER(普通用户), ADMIN(管理员)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([openid, storeId])
-  @@map("users")
-}
-
-
-// ------------------------------------------
-// 3. 分类表 (分类与商品关联)
-// ------------------------------------------
-model Category {
-  id             String     @id @default(cuid())
-  storeId        String     // 补齐：强制关联店铺ID
-  store          Store      @relation(fields: [storeId], references: [id])
-
-  name           String
-  parentId       String?    // 父分类ID
-  sortOrder      Int        @default(0)
-  isVisible      Boolean    @default(true)
-  level          Int        @default(0) // 0=一级, 1=二级
-
-  // 关联关系：自关联实现树状结构
-  parent         Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
-  children       Category[] @relation("CategoryToCategory")
-
-  // 关联关系：一个分类下有多个商品
-  products       Product[]
-
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-
-  @@map("categories")
-}
-
-// ------------------------------------------
-// 4. 商品表 (商品与分类关联)
-// ------------------------------------------
-model Product {
-  id             String   @id @default(cuid())
-  storeId        String   // 强制关联店铺ID
-  store          Store    @relation(fields: [storeId], references: [id])
-
-  displayId   String   @unique // 哈希后的展示ID
-
-  name           String   // 商品名称
-  categoryId     String?  // 新分类ID
-  category   Category? @relation(fields: [categoryId], references: [id])
-
-  // --- 存量数据保留字段 ---
-  style          String?  // 商品类型
-  storeCode      String?  // [旧数据] 手动填写的编码
-  images         Json     // 图片数组
-  priceRef       String   // 参考价格
-  materials      Json     // 花材信息
-  size           String?  // 尺寸
-  colorSeries    String?  // 色系
-  status         String   @default("ACTIVE") // 状态：ACTIVE/INACTIVE
-  description    String?  @db.Text
-  sortOrder      Int      @default(0)
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@map("products")
 }
