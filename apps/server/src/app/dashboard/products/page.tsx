@@ -247,7 +247,17 @@ export default function ProductDashboardPage() {
   );
 
   return (
-    <Flex h="calc(100vh - 60px)" direction="column" bg="white">
+    <Flex
+      h={isMobile ? "calc(100vh - 60px)" : "calc(100vh - 110px)"}
+      direction="column"
+      bg="white"
+      style={{
+        borderRadius: isMobile ? 0 : rem(12),
+        overflow: 'hidden',
+        boxShadow: isMobile ? 'none' : '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)',
+        border: isMobile ? 'none' : '1px solid #eee'
+      }}
+    >
       {/* 顶部搜索区 & PC 操作栏 */}
       <Box p="sm" bg="white" style={{ borderBottom: '1px solid #f0f0f0' }}>
         <Flex gap="md" align="center">
@@ -267,7 +277,7 @@ export default function ProductDashboardPage() {
       {/* 主体双栏布局 */}
       <Flex style={{ flex: 1, overflow: 'hidden' }}>
         {/* 左侧菜单导航 (带底部悬浮“未分类”) */}
-        <Box w={130} bg="#f8f8f8" style={{ borderRight: '1px solid #eee', position: 'relative' }}>
+        <Box w={isMobile ? 110 : 160} bg="#f8f8f8" style={{ borderRight: '1px solid #eee', position: 'relative' }}>
           <Flex direction="column" h="100%">
             <ScrollArea style={{ flex: 1 }}>
               <Stack gap={0}>
@@ -275,7 +285,7 @@ export default function ProductDashboardPage() {
                 {categories.map((category) => (
                   <UnstyledButton
                     key={category.id}
-                    p="md"
+                    p={isMobile ? "md" : "lg"}
                     bg={activeMenuId === category.id ? 'white' : 'transparent'}
                     style={{
                       borderLeft: activeMenuId === category.id ? `${rem(4)} solid #fab005` : 'none',
@@ -291,12 +301,11 @@ export default function ProductDashboardPage() {
               </Stack>
             </ScrollArea>
 
-            {/* 底部悬浮：未分类 */}
-            <Box bg="#f8f8f8" style={{ borderTop: '1px solid #eee' }}>
+            {/* 底部固定：未分类 */}
+            <Box bg={activeMenuId === 'uncategorized' ? 'white' : '#f0f0f0'} style={{ borderTop: '1px solid #eee' }}>
               <UnstyledButton
                 w="100%"
-                p="md"
-                bg={activeMenuId === 'uncategorized' ? 'white' : 'transparent'}
+                p={isMobile ? "md" : "lg"}
                 style={{
                   borderLeft: activeMenuId === 'uncategorized' ? `${rem(4)} solid #fab005` : 'none',
                 }}
