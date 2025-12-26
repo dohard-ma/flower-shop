@@ -83,14 +83,14 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { ApiResponseBuilder } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
+import getContext from '@/lib/get-context';
 
 const schema = z.object({
   name: z.string().min(1, '名称不能为空'),
 });
 
 export async function POST(request: NextRequest) {
-  const traceId = request.headers.get('X-Trace-ID')!;
-  const storeId = request.headers.get('x-store-id')!; // 中间件已确保存在
+  const { traceId, storeId } = getContext(request);
 
   try {
     const body = await request.json();
