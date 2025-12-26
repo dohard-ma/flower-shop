@@ -14,18 +14,9 @@
 import { Suspense, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, Loader2, Share2, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { generateShareImage } from '@/utils/share-image-generator';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Modal, Button, Group, Text, Title, Stack } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 
 // 导入自定义 Hooks
 import {
@@ -52,7 +43,6 @@ import type { Product } from './types';
  * 页面内容组件
  */
 function DiscoverPageContent() {
-    const { toast } = useToast();
     const router = useRouter();
 
     // === 状态管理 ===
@@ -70,7 +60,6 @@ function DiscoverPageContent() {
 
     // 分享模式管理
     const {
-        sharedIds,
         isSharedMode,
         sharedProducts,
         loading: sharedLoading,
@@ -180,10 +169,9 @@ function DiscoverPageContent() {
         const likedProductsList = allProducts.filter(p => isLiked(p.id));
 
         if (likedProductsList.length === 0) {
-            toast({
+            notifications.show({
                 title: '暂无分享内容',
-                description: '请先选择您喜欢的花束',
-                variant: 'default',
+                message: '请先选择您喜欢的花束',
             });
             return;
         }
@@ -205,15 +193,15 @@ function DiscoverPageContent() {
             setShowShareImage(true);
         } catch (err) {
             console.error('Failed to generate share image:', err);
-            toast({
+            notifications.show({
                 title: '生成分享图失败',
-                description: '请稍后重试',
-                variant: 'destructive',
+                message: '请稍后重试',
+                color: 'red',
             });
         } finally {
             setIsGeneratingShareImage(false);
         }
-    }, [allProducts, isLiked, likedIds, toast]);
+    }, [allProducts, isLiked, likedIds]);
 
     // 下载分享图片
     const handleDownloadShareImage = useCallback(() => {
@@ -233,13 +221,12 @@ function DiscoverPageContent() {
 
     // 功能提示
     const showTips = useCallback(() => {
-        toast({
+        notifications.show({
             title: '功能尚未实现',
-            description: '敬请期待',
-            variant: 'default',
-            duration: 500,
+            message: '敬请期待',
+            duration: 2000,
         });
-    }, [toast]);
+    }, []);
 
     // === 渲染 ===
     return (
@@ -297,29 +284,22 @@ function DiscoverPageContent() {
                         {viewMode === 'liked' && likedCount > 0 && (
                             <>
                                 {/* 清空按钮 */}
-                                <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
-                                    <button
-                                        onClick={() => setShowClearConfirm(true)}
-                                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                                        aria-label="清除所有喜欢"
-                                    >
-                                        <Trash2 className="w-5 h-5 text-gray-500" />
-                                    </button>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>确认清除</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                确定要清除所有喜欢的花束吗？此操作无法撤销。
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>取消</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleClearAllLiked}>
-                                                确认清除
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                <button
+                                    onClick={() => setShowClearConfirm(true)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                    aria-label="清除所有喜欢"
+                                >
+                                    <Trash2 className="w-5 h-5 text-gray-500" />
+                                </button>
+                                <Modal opened={showClearConfirm} onClose={() => setShowClearConfirm(false)} title="确认清除">
+                                    <Stack>
+                                        <Text>确定要清除所有喜欢的花束吗？此操作无法撤销。</Text>
+                                        <Group justify="flex-end">
+                                            <Button variant="subtle" onClick={() => setShowClearConfirm(false)}>取消</Button>
+                                            <Button color="red" onClick={handleClearAllLiked}>确认清除</Button>
+                                        </Group>
+                                    </Stack>
+                                </Modal>
 
                                 {/* 分享按钮 */}
                                 <button

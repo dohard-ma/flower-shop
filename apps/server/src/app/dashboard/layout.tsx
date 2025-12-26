@@ -1,5 +1,5 @@
 import '../globals.css';
-import { ClientLayout } from '@/components/client-layout';
+import { AdminLayout } from '@/components/AdminLayout';
 import type React from 'react';
 
 export default function RootLayout({
@@ -7,5 +7,5 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <ClientLayout>{children}</ClientLayout>;
+  return <AdminLayout>{children}</AdminLayout>;
 }

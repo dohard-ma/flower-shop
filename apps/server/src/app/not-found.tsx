@@ -1,36 +1,36 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-
-import { Button } from '@/components/ui/button';
+import { Title, Text, Button, Container, Group, Stack } from '@mantine/core';
 
 export default function NotFound() {
   const router = useRouter();
 
   return (
-    <div className='absolute top-1/2 left-1/2 mb-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-center'>
-      <span className='from-foreground bg-linear-to-b to-transparent bg-clip-text text-[10rem] leading-none font-extrabold text-transparent'>
-        404
-      </span>
-      <h2 className='font-heading my-2 text-2xl font-bold'>
-        Something&apos;s missing
-      </h2>
-      <p>
-        Sorry, the page you are looking for doesn&apos;t exist or has been
-        moved.
-      </p>
-      <div className='mt-8 flex justify-center gap-2'>
-        <Button onClick={() => router.back()} variant='default' size='lg'>
-          Go back
-        </Button>
-        <Button
-          onClick={() => router.push('/dashboard')}
-          variant='ghost'
-          size='lg'
+    <Container style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Stack align="center" gap="lg">
+        <Text
+          size="10rem"
+          fw={900}
+          variant="gradient"
+          gradient={{ from: 'gray.4', to: 'gray.0', deg: 180 }}
+          style={{ lineHeight: 1 }}
         >
-          Back to Home
-        </Button>
-      </div>
-    </div>
+          404
+        </Text>
+        <Title order={2} ta="center">页面不存在</Title>
+        <Text c="dimmed" size="lg" ta="center" maw={500}>
+          抱歉，您访问的页面不存在或已被移动。
+        </Text>
+        <Group justify="center" mt="xl">
+          <Button onClick={() => router.back()} variant="default" size="md">
+            返回上一页
+          </Button>
+          <Button onClick={() => router.push('/dashboard')} size="md">
+            返回首页
+          </Button>
+        </Group>
+      </Stack>
+    </Container>
   );
 }
