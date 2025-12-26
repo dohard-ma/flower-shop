@@ -119,7 +119,7 @@ Component({
           nickname: tempNickname,
           avatarPath: tempAvatar,
         });
-
+console.log('------------', loginRes)
         if (loginRes.success) {
           wx.showToast({ title: '登录成功', icon: 'success' });
           wx.vibrateShort({ type: 'medium' });

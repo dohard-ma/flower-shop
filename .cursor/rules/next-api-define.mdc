@@ -37,6 +37,22 @@ alwaysApply: false
   - 在 `/api/wx`（普通用户路径）下，中间件会优先尝试 User 密钥，若失败则尝试 Admin 密钥。**这意味着管理员可以正常使用所有普通用户功能**。
   - 在 `/api/wx/admin` 或 `/api/admin`（管理路径）下，仅接受 Admin 角色且必须使用 Admin 密钥验证。
 
+### 2.2 扫码登录权限逻辑 (QR Auth Flow)
+
+管理后台扫码登录涉及 Web 端（匿名）与小程序端（实名管理员）的跨端交互，其权限逻辑如下：
+
+1. **Web 端票据申请**：`POST /api/admin/auth/ticket`。
+    - **权限**：**无需登录 (Whitelist)**。
+    - **逻辑**：根据 `storeCode` 生成 `LoginTicket`，返回小程序码。
+2. **Web 端状态轮询**：`GET /api/admin/auth/ticket/[id]`。
+    - **权限**：**无需登录 (Whitelist)**。
+    - **逻辑**：检查票据状态。仅在状态为 `CONFIRMED` 时返回生成的管理员 JWT Token。
+3. **小程序端扫码确认**：`POST /api/wx/admin/login-confirm`。
+    - **权限**：**需登录 (Admin)**。
+    - **逻辑**：必须由已登录且拥有 `ADMIN` 角色的小程序用户调用。校验通过后，将管理员 Token 写入票据并更新状态为 `CONFIRMED`。
+
+> **安全注意**：虽然 Web 端接口在白名单中，但其仅返回混淆后的 base64 图片或加密后的 Token（仅在确认后），确保了流程的安全性。
+
 ## 3. 上下文获取 (Context Injection)
 
 中间件已处理所有拦截逻辑。在 Route Handler 中使用以下方式获取上下文：

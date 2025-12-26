@@ -5,6 +5,7 @@
         "pages/cart/index",
         "pages/user/index",
         "pages/admin/index",
+        "pages/admin/login/index",
         "pages/admin/upload/index",
         "pages/webview/index",
         "pages/admin/products/index",

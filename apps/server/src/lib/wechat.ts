@@ -291,7 +291,6 @@ export class WechatService {
    */
   static async getUnlimitedQRCode(scene: string, page: string, appId?: string, secret?: string): Promise<Buffer> {
     try {
-      console.log(`[WechatService] 正在获取小程序码: scene=${scene}, page=${page}, appId=${appId || this.APPID}`);
       const accessToken = await this.getAccessToken(appId, secret);
       const url = `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${accessToken}`;
 

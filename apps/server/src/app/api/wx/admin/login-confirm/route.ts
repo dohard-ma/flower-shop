@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiResponseBuilder } from '@/lib/api-response';
-import { generateTraceId } from '@/lib/generate-trace-id';
+import generateTraceId from '@/lib/generate-trace-id';
 import { generateToken } from '@/lib/auth/jwt';
 import { UserRole } from '@/lib/auth/types';
+import getContext from '@/lib/get-context';
 
 export async function POST(request: NextRequest) {
-  const traceId = generateTraceId();
+  const traceId = getContext(request).traceId;
   try {
     const { ticketId, openid, storeId } = await request.json();
 
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
       where: {
         openid,
         storeId,
-        role: 'ADMIN'
+        role: UserRole.ADMIN
       }
     });
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       {
         userId: user.id,
         userNo: user.displayId,
-        username: user.nickname || user.name || '管理员',
+        username: user.nickname || user.displayId || '管理员',
         role: UserRole.ADMIN,
         storeId: user.storeId
       },

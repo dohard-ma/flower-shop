@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { ApiResponseBuilder } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
+import getContext from '@/lib/get-context';
 
 // 1. 定义校验 Schema
 const categorySchema = z.object({
@@ -16,14 +17,7 @@ const updateCategorySchema = categorySchema.partial().extend({
   id: z.string().min(1, '分类ID不能为空'),
 });
 
-// 获取请求中的上下文信息
-function getContext(request: NextRequest) {
-  return {
-    traceId: request.headers.get('X-Trace-ID')!,
-    storeId: request.headers.get('x-store-id')!,
-    userId: request.headers.get('x-user-id')!,
-  };
-}
+
 
 // GET: 获取分类列表
 export async function GET(request: NextRequest) {

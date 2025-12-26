@@ -1,0 +1,46 @@
+<view class="flex flex-col items-center justify-center h-screen bg-gray px-40">
+  <view class="bg-white rounded-lg p-40 full-w shadow-sm">
+    <view class="text-center mb-60">
+      <image class="w-120 h-120 mb-20" src="/assets/logo.png" mode="aspectFit" />
+      <view class="text-xl font-bold text-333">管理后台登录确认</view>
+    </view>
+
+    <view class="bg-f5 rounded-md p-30 mb-60">
+      <view class="flex justify-between items-center mb-24">
+        <text class="text-sm text-999">申请项目</text>
+        <text class="text-sm text-333 font-500">花涧礼管理后台</text>
+      </view>
+      <view class="flex justify-between items-center">
+        <text class="text-sm text-999">登录身份</text>
+        <text class="text-sm text-brand font-500">{{userInfo.nickname}} (管理员)</text>
+      </view>
+    </view>
+
+    <view class="flex flex-col gap-30">
+      <t-button
+        theme="primary"
+        size="large"
+        block
+        shape="round"
+        bindtap="onConfirm"
+        loading="{{loading}}"
+      >
+        确认授权登录
+      </t-button>
+      <t-button
+        variant="outline"
+        theme="light"
+        size="large"
+        block
+        shape="round"
+        bindtap="onCancel"
+      >
+        取消
+      </t-button>
+    </view>
+  </view>
+
+  <view class="mt-40 text-xs text-999 text-center">
+    确认登录后，您的浏览器端将自动进入管理系统
+  </view>
+</view>

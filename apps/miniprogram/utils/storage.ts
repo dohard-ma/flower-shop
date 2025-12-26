@@ -8,9 +8,7 @@ export const STORAGE_KEYS = {
   USER_INFO: "user_info",
   UPLOAD_TASKS: "uploadTasks",
   AI_ANALYSIS_ENABLED: "ai_analysis_enabled",
-  INPUT_MODE: "input_mode",
-  OPENID: "openid",
-  STORE_ID: "store_id",
+  INPUT_MODE: "input_mode"
 }
 
 export const storage = {

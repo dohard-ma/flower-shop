@@ -29,13 +29,6 @@ export async function silentLogin(): Promise<void> {
     if (response?.success && response?.data?.token) {
       storage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
       storage.setItem(STORAGE_KEYS.USER_INFO, response.data);
-      // 存储 openid 和 storeId 用于后台登录确认
-      if (response.data.openid) {
-        storage.setItem(STORAGE_KEYS.OPENID, response.data.openid);
-      }
-      if (response.data.storeId) {
-        storage.setItem(STORAGE_KEYS.STORE_ID, response.data.storeId);
-      }
     } else {
       throw new Error(response?.message || '登录失败');
     }
@@ -80,6 +73,8 @@ export interface UserInfo {
   alwaysAllowSubscriptionKeys?: string[];
   allowSubscription?: boolean;
   role: UserRole;
+  openid: string;
+  storeId: string;
 }
 
 // 更新用户信息参数
@@ -219,6 +214,21 @@ export function updateSubscriptionPermission(data: {
 }) {
   return request({
     url: '/user/subscription-permission',
+    method: 'POST',
+    data
+  });
+}
+
+/**
+ * 后台授权登录
+ */
+export function confirmAdminLogin(data: {
+  ticketId: string;
+  openid: string;
+  storeId: string;
+}) {
+  return request<any>({
+    url: '/admin/login-confirm',
     method: 'POST',
     data
   });

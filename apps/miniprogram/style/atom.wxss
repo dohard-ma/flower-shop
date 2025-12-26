@@ -103,6 +103,7 @@
 .rounded-t-3xl { border-radius: 48rpx 48rpx 0 0; }
 .rounded-full { border-radius: 9999rpx; }
 .overflow-hidden { overflow: hidden; }
+.shadow-sm { box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.05); }
 
 .border-1 { border: 1rpx solid #f0f0f0; }
 .border-2 { border: 2rpx solid #f0f0f0; }

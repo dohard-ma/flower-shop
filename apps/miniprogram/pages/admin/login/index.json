@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "授权登录",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-avatar": "tdesign-miniprogram/avatar/avatar",
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
+}
+

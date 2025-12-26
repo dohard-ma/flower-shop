@@ -37,23 +37,31 @@ function LoginContent() {
   const storeCode = searchParams.get('store');
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const loginModeRef = useRef(loginMode);
+
+  useEffect(() => {
+    loginModeRef.current = loginMode;
+  }, [loginMode]);
 
   // 获取二维码
   const fetchQrCode = async () => {
-    try {
-      if (!storeCode) {
-        setError('请在 URL 中提供店铺标识，例如: ?store=H');
-        setStatus('ERROR');
-        return;
-      }
+    if (loginModeRef.current !== 'qrcode') return;
 
+    try {
       setStatus('PENDING');
       setError(null);
+
+      // storeCode 可以为空，后端会处理默认值
       const res = await http.post('/api/admin/auth/ticket', { storeCode });
+
+      // 如果切换了模式，就不更新状态了
+      if (loginModeRef.current !== 'qrcode') return;
+
       setQrCode(res.data.qrCode);
       setTicketId(res.data.ticketId);
       startPolling(res.data.ticketId);
     } catch (err: any) {
+      if (loginModeRef.current !== 'qrcode') return;
       setError(err.message || '获取二维码失败');
       setStatus('ERROR');
     }
@@ -154,59 +162,51 @@ function LoginContent() {
 
             {loginMode === 'qrcode' ? (
               <Box mt="md">
-                {!storeCode ? (
-                  <Alert variant="light" color="blue" icon={<IconAlertCircle />}>
-                    请在 URL 中提供店铺标识，例如: ?store=H
-                  </Alert>
-                ) : (
-                  <>
-                    <Center>
-                      {status === 'PENDING' && !qrCode && <Loader size="xl" />}
-                      {qrCode && (
-                        <Box pos="relative" style={{ border: '1px solid #eee', padding: 10, borderRadius: 8 }}>
-                          <Image
-                            src={qrCode}
-                            alt="Login QR Code"
-                            width={240}
-                            height={240}
-                            style={{
-                              filter: (status === 'EXPIRED' || status === 'CONFIRMED') ? 'blur(4px)' : 'none',
-                              opacity: (status === 'EXPIRED' || status === 'CONFIRMED') ? 0.5 : 1,
-                              display: 'block'
-                            }}
-                          />
-                          {status === 'EXPIRED' && (
-                            <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
-                              <Stack gap="xs" align="center">
-                                <Text fw={700}>二维码已过期</Text>
-                                <Button variant="filled" size="sm" onClick={fetchQrCode}>点击刷新</Button>
-                              </Stack>
-                            </Center>
-                          )}
-                          {status === 'CONFIRMED' && (
-                            <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
-                              <Stack gap="xs" align="center">
-                                <Text fw={700} c="green">登录成功</Text>
-                                <Text size="xs">正在跳转...</Text>
-                              </Stack>
-                            </Center>
-                          )}
-                          {status === 'SCANNED' && (
-                            <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
-                              <Stack gap="xs" align="center">
-                                <Text fw={700}>已扫码</Text>
-                                <Text size="xs">请在手机端确认登录</Text>
-                              </Stack>
-                            </Center>
-                          )}
-                        </Box>
+                <Center>
+                  {status === 'PENDING' && !qrCode && <Loader size="xl" />}
+                  {qrCode && (
+                    <Box pos="relative" style={{ border: '1px solid #eee', padding: 10, borderRadius: 8 }}>
+                      <Image
+                        src={qrCode}
+                        alt="Login QR Code"
+                        width={240}
+                        height={240}
+                        style={{
+                          filter: (status === 'EXPIRED' || status === 'CONFIRMED') ? 'blur(4px)' : 'none',
+                          opacity: (status === 'EXPIRED' || status === 'CONFIRMED') ? 0.5 : 1,
+                          display: 'block'
+                        }}
+                      />
+                      {status === 'EXPIRED' && (
+                        <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
+                          <Stack gap="xs" align="center">
+                            <Text fw={700}>二维码已过期</Text>
+                            <Button variant="filled" size="sm" onClick={fetchQrCode}>点击刷新</Button>
+                          </Stack>
+                        </Center>
                       )}
-                    </Center>
-                    <Text size="sm" ta="center" mt="md" c="dimmed">
-                      请使用该店铺关联的小程序扫码
-                    </Text>
-                  </>
-                )}
+                      {status === 'CONFIRMED' && (
+                        <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
+                          <Stack gap="xs" align="center">
+                            <Text fw={700} c="green">登录成功</Text>
+                            <Text size="xs">正在跳转...</Text>
+                          </Stack>
+                        </Center>
+                      )}
+                      {status === 'SCANNED' && (
+                        <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
+                          <Stack gap="xs" align="center">
+                            <Text fw={700}>已扫码</Text>
+                            <Text size="xs">请在手机端确认登录</Text>
+                          </Stack>
+                        </Center>
+                      )}
+                    </Box>
+                  )}
+                </Center>
+                <Text size="sm" ta="center" mt="md" c="dimmed">
+                  请使用该店铺关联的小程序扫码
+                </Text>
               </Box>
             ) : (
               <form onSubmit={handlePasswordSubmit}>

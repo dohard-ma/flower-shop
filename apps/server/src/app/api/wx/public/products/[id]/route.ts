@@ -1,14 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ApiResponseBuilder } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
-
-// 获取请求中的上下文信息
-function getContext(request: NextRequest) {
-  return {
-    traceId: request.headers.get('X-Trace-ID')!,
-    appId: request.headers.get('x-wechat-appid')!,
-  };
-}
+import getContext from '@/lib/get-context';
 
 export async function GET(
   request: NextRequest,

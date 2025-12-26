@@ -7,7 +7,12 @@ import { WechatService } from '@/lib/wechat';
 export async function POST(request: NextRequest) {
   const traceId = generateTraceId(request.url);
   try {
-    const { storeId, storeCode } = await request.json();
+    let { storeId, storeCode } = await request.json();
+
+    // 如果没传，使用环境变量中的默认店铺编码
+    if (!storeId && !storeCode) {
+      storeCode = process.env.DEFAULT_STORE_CODE;
+    }
 
     if (!storeId && !storeCode) {
       return ApiResponseBuilder.error(traceId, '请提供店铺ID或店铺编码', 400);
@@ -41,7 +46,7 @@ export async function POST(request: NextRequest) {
     // scene 参数: ticketId
     // page 参数: 小程序内负责确认登录的页面
     const scene = ticket.id;
-    const page = 'pages/admin/index'; // 假设这个页面负责处理管理员确认
+    const page = 'pages/admin/login/index'; // 专门的扫码授权页面
 
     let qrCodeBuffer: Buffer;
     try {

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       {
         userId: user.id,
         userNo: user.displayId,
-        username: user.nickname || user.username || '管理员',
+        username: user.nickname || user.displayId || '管理员',
         role: UserRole.ADMIN,
         storeId: user.storeId
       },
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const response = ApiResponseBuilder.success('trace-id', {
       user: {
         id: user.id,
-        username: user.username,
+        displayId: user.displayId,
         nickname: user.nickname
       }
     }, '登录成功');

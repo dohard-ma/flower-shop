@@ -55,7 +55,7 @@ function getRouteConfig(path: string) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const traceId = generateTraceId(pathname)
-
+ 
   const method = request.method
   const url = request.url
   const searchParams = Object.fromEntries(new URL(url).searchParams)
