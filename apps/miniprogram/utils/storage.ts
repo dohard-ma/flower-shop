@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   UPLOAD_TASKS: "uploadTasks",
   AI_ANALYSIS_ENABLED: "ai_analysis_enabled",
   INPUT_MODE: "input_mode",
+  OPENID: "openid",
+  STORE_ID: "store_id",
 }
 
 export const storage = {

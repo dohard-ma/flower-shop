@@ -42,6 +42,10 @@ function getRouteConfig(path: string) {
 
   // 5. 后台管理接口 (需登录)
   if (path.startsWith('/api/admin')) {
+    // 登录相关的接口不需要鉴权
+    if (path.startsWith('/api/admin/auth/login') || path.startsWith('/api/admin/auth/ticket')) {
+      return { role: UserRole.ADMIN, needAppId: false, needAuth: false };
+    }
     return { role: UserRole.ADMIN, needAppId: false, needAuth: true };
   }
 

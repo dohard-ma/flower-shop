@@ -281,6 +281,57 @@ export class WechatService {
     }
   }
 
+  /**
+   * 获取小程序码 (不限制次数)
+   * @param scene 最大32个可见字符，只支持数字，大小写英文以及部分特殊字符
+   * @param page 必须是已经发布的小程序界面地址
+   * @param appId
+   * @param secret
+   * @returns
+   */
+  static async getUnlimitedQRCode(scene: string, page: string, appId?: string, secret?: string): Promise<Buffer> {
+    try {
+      console.log(`[WechatService] 正在获取小程序码: scene=${scene}, page=${page}, appId=${appId || this.APPID}`);
+      const accessToken = await this.getAccessToken(appId, secret);
+      const url = `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${accessToken}`;
+
+      const payload = {
+        scene: scene.substring(0, 32), // 强制截断至32位以防万一
+        page,
+        check_path: false,
+        env_version: process.env.NODE_ENV === 'production' ? 'release' : 'develop'
+      };
+
+      console.log(`[WechatService] 请求参数:`, JSON.stringify(payload));
+
+      const response = await axios.post(url, payload, {
+        responseType: 'arraybuffer'
+      });
+
+      // 如果返回的是 JSON，说明出错了
+      const contentType = response.headers['content-type'];
+      if (contentType && contentType.includes('application/json')) {
+        const result = JSON.parse(Buffer.from(response.data).toString());
+        console.error(`[WechatService] 微信返回错误:`, result);
+        if (result.errcode) {
+          throw new Error(`获取小程序码失败: ${result.errmsg} (错误码: ${result.errcode})`);
+        }
+      }
+
+      console.log(`[WechatService] 成功获取小程序码, 数据长度: ${response.data.byteLength}`);
+      return Buffer.from(response.data);
+    } catch (error: any) {
+      console.error('获取小程序码异常:', error.message);
+      if (error.response?.data) {
+        try {
+          const errorDetail = JSON.parse(Buffer.from(error.response.data).toString());
+          console.error('错误详情:', errorDetail);
+        } catch(e) {}
+      }
+      throw error;
+    }
+  }
+
   // 查询支付订单状态
   static async queryPayOrder(outTradeNo: string) {
     try {

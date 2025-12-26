@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, FormEvent, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   TextInput,
   PasswordInput,
@@ -12,25 +12,97 @@ import {
   Button,
   Stack,
   Alert,
+  Center,
+  Loader,
+  SegmentedControl,
+  Box,
 } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { IconAlertCircle, IconQrcode, IconLock } from '@tabler/icons-react';
 import { http } from '@/lib/request';
+import Image from 'next/image';
 
-export default function LoginPage() {
+function LoginContent() {
+  const [loginMode, setLoginMode] = useState<'qrcode' | 'password'>('qrcode');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [ticketId, setTicketId] = useState<string | null>(null);
+  const [status, setStatus] = useState<'PENDING' | 'SCANNED' | 'CONFIRMED' | 'EXPIRED' | 'ERROR'>('PENDING');
+  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const storeCode = searchParams.get('store');
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 获取二维码
+  const fetchQrCode = async () => {
+    try {
+      if (!storeCode) {
+        setError('请在 URL 中提供店铺标识，例如: ?store=H');
+        setStatus('ERROR');
+        return;
+      }
+
+      setStatus('PENDING');
+      setError(null);
+      const res = await http.post('/api/admin/auth/ticket', { storeCode });
+      setQrCode(res.data.qrCode);
+      setTicketId(res.data.ticketId);
+      startPolling(res.data.ticketId);
+    } catch (err: any) {
+      setError(err.message || '获取二维码失败');
+      setStatus('ERROR');
+    }
+  };
+
+  // 开始轮询
+  const startPolling = (id: string) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(async () => {
+      try {
+        const res = await http.get(`/api/admin/auth/ticket/${id}`, { showError: false });
+        const newStatus = res.data.status;
+
+        if (newStatus !== status) {
+          setStatus(newStatus);
+        }
+
+        if (newStatus === 'CONFIRMED') {
+          if (timerRef.current) clearInterval(timerRef.current);
+          router.push('/dashboard');
+        } else if (newStatus === 'EXPIRED') {
+          if (timerRef.current) clearInterval(timerRef.current);
+        }
+      } catch (err) {
+        console.error('轮询失败:', err);
+      }
+    }, 2000);
+  };
+
+  useEffect(() => {
+    if (loginMode === 'qrcode') {
+      fetchQrCode();
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [loginMode, storeCode]);
+
+  const handlePasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await http.post('/api/admin/auth/login', {
-        username,
+        username, // 这里的 username 映射到后端的 displayId
         password
       });
       if (response.success) {
@@ -50,15 +122,98 @@ export default function LoginPage() {
           管理员登录
         </Title>
         <Text c="dimmed" size="sm" ta="center" mt={5}>
-          请输入您的账号和密码进行登录
+          {storeCode ? `正在登录店铺: ${storeCode}` : '请扫描下方小程序码登录'}
         </Text>
 
         <Paper withBorder shadow="md" p={30} mt={30} radius="md">
-          <form onSubmit={handleSubmit}>
+          <Stack>
+            <SegmentedControl
+              value={loginMode}
+              onChange={(value: any) => setLoginMode(value)}
+              data={[
+                {
+                  label: (
+                    <Center style={{ gap: 10 }}>
+                      <IconQrcode size={16} />
+                      <span>扫码登录</span>
+                    </Center>
+                  ),
+                  value: 'qrcode'
+                },
+                {
+                  label: (
+                    <Center style={{ gap: 10 }}>
+                      <IconLock size={16} />
+                      <span>密码登录</span>
+                    </Center>
+                  ),
+                  value: 'password'
+                },
+              ]}
+            />
+
+            {loginMode === 'qrcode' ? (
+              <Box mt="md">
+                {!storeCode ? (
+                  <Alert variant="light" color="blue" icon={<IconAlertCircle />}>
+                    请在 URL 中提供店铺标识，例如: ?store=H
+                  </Alert>
+                ) : (
+                  <>
+                    <Center>
+                      {status === 'PENDING' && !qrCode && <Loader size="xl" />}
+                      {qrCode && (
+                        <Box pos="relative" style={{ border: '1px solid #eee', padding: 10, borderRadius: 8 }}>
+                          <Image
+                            src={qrCode}
+                            alt="Login QR Code"
+                            width={240}
+                            height={240}
+                            style={{
+                              filter: (status === 'EXPIRED' || status === 'CONFIRMED') ? 'blur(4px)' : 'none',
+                              opacity: (status === 'EXPIRED' || status === 'CONFIRMED') ? 0.5 : 1,
+                              display: 'block'
+                            }}
+                          />
+                          {status === 'EXPIRED' && (
+                            <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
+                              <Stack gap="xs" align="center">
+                                <Text fw={700}>二维码已过期</Text>
+                                <Button variant="filled" size="sm" onClick={fetchQrCode}>点击刷新</Button>
+                              </Stack>
+                            </Center>
+                          )}
+                          {status === 'CONFIRMED' && (
+                            <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
+                              <Stack gap="xs" align="center">
+                                <Text fw={700} c="green">登录成功</Text>
+                                <Text size="xs">正在跳转...</Text>
+                              </Stack>
+                            </Center>
+                          )}
+                          {status === 'SCANNED' && (
+                            <Center pos="absolute" inset={0} bg="rgba(255,255,255,0.7)" style={{ borderRadius: 8 }}>
+                              <Stack gap="xs" align="center">
+                                <Text fw={700}>已扫码</Text>
+                                <Text size="xs">请在手机端确认登录</Text>
+                              </Stack>
+                            </Center>
+                          )}
+                        </Box>
+                      )}
+                    </Center>
+                    <Text size="sm" ta="center" mt="md" c="dimmed">
+                      请使用该店铺关联的小程序扫码
+                    </Text>
+                  </>
+                )}
+              </Box>
+            ) : (
+              <form onSubmit={handlePasswordSubmit}>
             <Stack>
               <TextInput
-                label="账号"
-                placeholder="请输入账号"
+                label="管理员编号"
+                placeholder="请输入您的管理员编号 (如: H-1001)"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -72,20 +227,29 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
-
-              {error && (
-                <Alert variant="light" color="red" title="登录失败" icon={<IconAlertCircle />}>
-                  {error}
-                </Alert>
-              )}
-
-              <Button fullWidth mt="xl" type="submit" loading={isLoading}>
+              <Button fullWidth mt="md" type="submit" loading={isLoading}>
                 登录
               </Button>
             </Stack>
-          </form>
+              </form>
+            )}
+
+            {error && (
+              <Alert variant="light" color="red" title="登录失败" icon={<IconAlertCircle />}>
+                {error}
+              </Alert>
+            )}
+          </Stack>
         </Paper>
       </Container>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<Center style={{ height: '100vh' }}><Loader /></Center>}>
+      <LoginContent />
+    </Suspense>
   );
 }

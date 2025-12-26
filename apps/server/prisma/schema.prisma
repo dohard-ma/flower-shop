@@ -28,9 +28,58 @@ model Store {
   users       User[]
   categories  Category[]
   products    Product[]
+  showcaseMenus ShowcaseMenu[]
 
   createdAt   DateTime   @default(now())
   @@map("stores")
+}
+
+// ------------------------------------------
+// 2. 全局流水号计数器 (大一统流水线)
+// ------------------------------------------
+// ... (existing SystemSequence model) ...
+
+// ... (existing User, Category, Product models) ...
+
+// ------------------------------------------
+// 5. 扫码登录票据
+// ------------------------------------------
+model LoginTicket {
+  id        String   @id @default(cuid())
+  storeId   String
+  scene     String?  // 额外场景信息
+  status    String   @default("PENDING") // PENDING, SCANNED, CONFIRMED, EXPIRED, CANCELLED
+  openid    String?
+  userId    String?
+  token     String?  @db.Text // 登录后的 JWT token
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime
+
+  @@map("login_tickets")
+}
+
+// ------------------------------------------
+// 6. 橱窗菜单 (左侧导航装修)
+// ------------------------------------------
+model ShowcaseMenu {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id])
+  name        String
+
+  // 筛选规则 (单规则)
+  type        String   // "TAG" | "CATEGORY" | "FEATURE"
+  targetValue String   // "BIRTHDAY" | "cuid_123" | "IS_HOT"
+
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("showcase_menus")
 }
 
 // ------------------------------------------
@@ -51,9 +100,12 @@ model User {
   storeId     String   // 强制关联店铺ID
   store       Store    @relation(fields: [storeId], references: [id])
 
-  displayId   String   @unique // 哈希后的展示ID
+  displayId   String   @unique // 唯一展示ID (如: H-1001)，用于登录用户名
 
-  openid      String   // 微信用户唯一标识
+  // --- 登录凭证 ---
+  openid      String?  // 微信用户唯一标识 (可选)
+  password    String?  // 密码 (加密存储)
+
   nickname    String?  // 用户昵称
   avatar      String?  // 用户头像URL
   phone       String?  // 手机号
@@ -67,7 +119,7 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([openid, storeId]) // 确保用户在单店内的唯一性
+  @@unique([openid, storeId])
   @@map("users")
 }
 
