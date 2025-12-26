@@ -1,7 +1,9 @@
 /* 导入全局原子样式 */
 @import '/style/atom.wxss';
 
-/* ProfileCard 组件样式 */
+/* ========================================
+   Visual Components (复杂视觉组件)
+   ======================================== */
 
 /* 深色渐变背景 */
 .profile-gradient {
@@ -9,7 +11,7 @@
   box-shadow: 0 40rpx 80rpx -30rpx rgba(0, 0, 0, 0.2);
 }
 
-/* 头像环（带毛玻璃效果） */
+/* 头像环（毛玻璃特效，无法用原子类替代） */
 .avatar-ring {
   width: 144rpx;
   height: 144rpx;
@@ -59,7 +61,13 @@
   justify-content: center;
 }
 
-/* 登录弹窗特定样式 */
+/* 进度条填充 (动态宽度由 style 控制，这里仅定义外观) */
+.progress-fill {
+  background: #ffffff;
+  border-radius: 999rpx;
+}
+
+/* 登录弹窗特定交互修正 */
 .login-popup {
   display: flex;
   flex-direction: column;
@@ -69,48 +77,20 @@
     border: none;
     padding: 0;
     line-height: normal;
-
-    &::after {
-      border: none;
-    }
+    &::after { border: none; }
   }
 
-  /* 隐私协议竖线 */
-  .bg-f0 {
-    background-color: #f0f0f0;
-  }
-
-  /* 辅助背景色 */
-  .bg-f9 {
-    background-color: #f9f9f9;
-  }
-
-  /* 边框色 */
-  .border-ddd {
-    border-color: #dddddd;
-  }
-  .border-f5 {
-    border-color: #f5f5f5;
-  }
-
-  /* 常用颜色 */
-  .text-333 { color: #333333; }
-  .text-666 { color: #666666; }
-  .text-999 { color: #999999; }
-  .text-bbb { color: #bbbbbb; }
-
-  /* TDesign Input 定制 */
+  /* TDesign Input 穿透定制 */
   .t-input {
     --td-input-bg-color: transparent;
     padding: 0 !important;
-
     .t-input__control {
       font-weight: 500;
       color: #333;
     }
   }
 
-  /* 手机号授权按钮重置 - 与 Input 样式一致 */
+  /* 手机号按钮重置 */
   .phone-button {
     background: transparent !important;
     padding: 0 !important;
@@ -124,20 +104,14 @@
     min-height: auto !important;
     color: inherit;
     font-weight: inherit;
-
-    &::after {
-      border: none !important;
-    }
+    &::after { border: none !important; }
   }
 
-  /* 复选框样式定制 */
+  /* 复选框定制 */
   .agreement-checkbox {
     --td-checkbox-icon-size: 36rpx;
     --td-checkbox-checked-color: #1a1a1a;
     padding: 0 !important;
-
-    .t-checkbox__content {
-      display: none;
-    }
+    .t-checkbox__content { display: none; }
   }
 }

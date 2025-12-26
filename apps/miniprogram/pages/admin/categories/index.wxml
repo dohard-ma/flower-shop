@@ -1,34 +1,38 @@
-<view class="flex-col bg-f5 h-screen">
-  <scroll-view scroll-y class="flex-1 pb-128">
+<view class="flex-col bg-page h-screen">
+  <scroll-view scroll-y class="flex-1" style="padding-bottom: 128rpx;">
     <view class="flex-col">
       <view wx:for="{{flatList}}" wx:key="_id"
-            class="flex-row items-center bg-white border-b mb-2 {{item.indent > 0 ? 'bg-f5' : ''}}"
+            class="flex-row items-center bg-white border-b mb-4 {{item.indent > 0 ? 'bg-gray' : ''}}"
             style="padding-left: {{item.indent * 40 + 40}}rpx; padding-right: 40rpx;">
 
-        <view wx:if="{{item.indent > 0}}" class="w-4 h-28 bg-brand mr-20 rounded-full"></view>
+        <view wx:if="{{item.indent > 0}}" class="w-4 bg-brand mr-20 rounded-full" style="height: 28rpx;"></view>
 
         <view class="flex-1 py-30 flex-row items-center">
           <view class="flex-1 flex-col">
             <view class="flex-row items-center">
-              <text class="text-lg font-500 text-333">{{item.name}}</text>
-              <text class="text-xs text-999 ml-20">{{item.productCount}}件商品</text>
+              <text class="text-lg font-medium text-main">{{item.name}}</text>
+              <text class="text-xs text-placeholder ml-20">{{item.productCount}}件商品</text>
             </view>
           </view>
 
           <view class="flex-row items-center gap-20">
             <view class="flex-row gap-10">
-              <view class="p-10" data-index="{{index}}" data-direction="up" catchtap="onMoveOrder">
+              <view class="p-10 btn-icon" data-index="{{index}}" data-direction="up" catchtap="onMoveOrder">
                 <t-icon name="arrow-up" size="36rpx" color="{{item.isFirstInGroup ? '#eee' : '#999'}}" />
               </view>
-              <view class="p-10" data-index="{{index}}" data-direction="down" catchtap="onMoveOrder">
+              <view class="p-10 btn-icon" data-index="{{index}}" data-direction="down" catchtap="onMoveOrder">
                 <t-icon name="arrow-down" size="36rpx" color="{{item.isLastInGroup ? '#eee' : '#999'}}" />
               </view>
             </view>
 
             <t-icon wx:if="{{item.indent === 0 && item.hasChildren}}" name="{{item.expanded ? 'chevron-up' : 'chevron-down'}}" size="40rpx" color="#999" data-id="{{item._id}}" catchtap="onToggleExpand" />
+
             <t-icon wx:if="{{item.indent === 0 && item.canAddChild}}" name="add" size="40rpx" color="#07c160" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onAddChild" />
+
             <t-icon name="{{item.isVisible ? 'browse' : 'browse-off'}}" size="40rpx" color="{{item.isVisible ? '#0052d9' : '#ccc'}}" data-id="{{item._id}}" data-visible="{{item.isVisible}}" catchtap="onToggleVisible" />
+
             <t-icon name="edit" size="40rpx" color="#1890ff" data-id="{{item._id}}" data-name="{{item.name}}" catchtap="onStartEdit" />
+
             <t-icon name="delete" size="40rpx" color="#ff4d4f" data-id="{{item._id}}" data-name="{{item.name}}" data-has-children="{{item.hasChildren}}" data-product-count="{{item.productCount}}" catchtap="onDelete" />
           </view>
         </view>
@@ -36,7 +40,6 @@
     </view>
   </scroll-view>
 
-  <!-- 底部新增一级分类按钮 -->
   <t-fab icon="add" bind:click="onAdd" aria-label="新增一级分类" class="bottom-0 right-0 m-30"></t-fab>
 
 </view>

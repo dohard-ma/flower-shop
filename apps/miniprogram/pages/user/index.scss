@@ -1,23 +1,16 @@
 /* ========================================
-   页面级样式 - 仅保留通用装饰
+   页面级样式 - 视觉组件 (Visual Components)
    ======================================== */
 
 /* 小米风格超大圆角卡片 */
 .card-round {
   background: #ffffff;
+  /* 20rpx 是特定视觉设计，不强制使用 rounded-lg (24rpx) */
   border-radius: 20rpx;
   box-shadow: 0 20rpx 20rpx -20rpx rgba(0, 0, 0, 0.04);
   border: 2rpx solid rgba(255, 255, 255, 0.7);
-  padding: 20rpx;
+  /* 移除 padding，由 WXML 的 p-xx 原子类控制，更灵活 */
+  overflow: hidden; /* 建议加上，防止子元素溢出圆角 */
 }
 
-/* 圆形图标容器 */
-.icon-round {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 24rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40rpx;
-}
+/* .icon-round 已被原子类 w-48 h-48 rounded-lg flex... 完美替代，故删除 */

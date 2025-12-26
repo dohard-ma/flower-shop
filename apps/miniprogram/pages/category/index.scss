@@ -1,13 +1,17 @@
-@import '../../style/common.wxss';
+/* 导入全局原子样式 */
+@import '/style/atom.wxss';
 
-/* === 新增：特殊效果 === */
+/* === Page Specific: 视觉组件 === */
+
 /* 子项激活下划线（用于二级分类选中效果） */
+/* 这是一个复杂的视觉修饰，使用 SCSS 维护是正确的 */
 .child-active-line::after {
   content: "";
   position: absolute;
   left: 30rpx;
   bottom: -6rpx;
+  /* calc 是逻辑计算，保留在 SCSS */
   width: calc(100% - 30rpx);
   height: 3rpx;
-  background-color: #333333;
+  background-color: #333333; /* 如果需要，可替换为 var(--td-brand-color) 或 var(--text-main) */
 }

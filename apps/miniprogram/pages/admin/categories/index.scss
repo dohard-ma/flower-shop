@@ -1,26 +1,24 @@
-@import "../../../style/common.wxss";
+@import "../../../style/atom.wxss";
 
-.h-screen { height: 100vh; }
+/* ========================================
+   Visual Components (视觉组件)
+   ======================================== */
 
-// 输入框美化
+// 输入框下划线风格 (如果 WXML 中有用到切换输入框逻辑则需要，否则可移除)
 .input-edit {
   border-bottom: 2rpx solid #0052d9;
   padding: 4rpx 0;
   background: transparent;
 }
 
-// 二级分类的轻微缩进感
-.bg-f5 {
-  background-color: #f9f9f9 !important;
-}
-
-// 按钮按下态反馈
-.p-10:active {
-  background-color: #f0f0f0;
+// 按钮图标交互态
+// 替代原先的 .p-10:active，避免污染原子类
+.btn-icon:active {
+  background-color: #f0f0f0; /* 或 var(--bg-gray) */
   border-radius: 50%;
 }
 
-// 覆盖 TDesign 默认边距
+// 覆盖 TDesign 组件样式
 .t-button {
   --td-button-small-padding-horizontal: 24rpx;
 }
