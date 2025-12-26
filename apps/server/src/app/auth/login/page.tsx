@@ -37,7 +37,7 @@ const getCookie = (name: string) => {
 };
 
 function LoginContent() {
-  const [loginMode, setLoginMode] = useState<'qrcode' | 'password'>('qrcode');
+  const [loginMode, setLoginMode] = useState<'qrcode' | 'password'>('password');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);

@@ -1,292 +1,393 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Container,
-  Title,
   Text,
   Group,
   Button,
   TextInput,
-  Table,
-  Badge,
   ActionIcon,
-  Menu,
-  Pagination,
-  Card,
   Image,
   Stack,
-  Modal,
-  Select,
-  Switch,
+  Tabs,
   LoadingOverlay,
   rem,
-  ScrollArea,
-  MultiSelect,
-  NumberInput,
   Box,
+  Flex,
+  UnstyledButton,
+  ScrollArea,
+  Divider,
+  Badge,
+  Loader,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useMediaQuery, useIntersection } from '@mantine/hooks';
 import {
   IconSearch,
   IconPlus,
-  IconEdit,
-  IconTrash,
   IconDots,
-  IconFilter,
-  IconRefresh,
+  IconCategory,
+  IconArrowsSort,
+  IconListCheck,
   IconPhoto,
+  IconChevronDown,
+  IconInfoCircle,
 } from '@tabler/icons-react';
 import { http } from '@/lib/request';
 import { notifications } from '@mantine/notifications';
-import flowerMaterialsData from '@/data/flower-materials.json';
 
-// 产品类型定义
+// --- 类型定义 ---
 export interface Product {
   id: string;
+  displayId: string;
   name: string;
-  category: string;
-  style?: string;
-  images: string[];
-  videos?: string[];
+  images: any;
   priceRef: string;
-  materials: string[];
-  targetAudience?: string[];
-  size?: 'XS' | 'S' | 'M' | 'L';
-  branchCount?: number;
-  status: string;
-  description?: string;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  stock?: number;
+  monthlySales?: number;
+  categories?: { category: StoreCategory }[];
 }
 
-interface ApiResponse {
-  data: Product[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+export interface StoreCategory {
+  id: string;
+  name: string;
+  sortOrder: number;
 }
+
+interface ApiResponse<T> {
+  data: T[];
+  total: number;
+}
+
+// --- 子组件：商品项 (高度还原美团风格) ---
+const ProductItem = ({ product, onEdit }: { product: Product; onEdit: (id: string) => void }) => {
+  const images = Array.isArray(product.images) ? product.images : [];
+  const mainImage = images[0];
+
+  return (
+    <Box py="md" style={{ borderBottom: `${rem(1)} solid #f5f5f5` }}>
+      <Flex gap="sm">
+        {/* 商品图片 */}
+        <Box pos="relative" w={110} h={110}>
+          {mainImage ? (
+            <Image src={mainImage} radius="sm" w={110} h={110} />
+          ) : (
+            <Box w={110} h={110} bg="gray.1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: rem(4) }}>
+              <IconPhoto size={36} color="#ddd" />
+            </Box>
+          )}
+        </Box>
+
+        {/* 商品详情 */}
+        <Stack gap={2} style={{ flex: 1 }}>
+          <Text size="sm" fw={700} lineClamp={2} style={{ lineHeight: 1.3 }}>
+            {product.name}
+          </Text>
+          <Group gap="xs" mt={2}>
+            <Text size="xs" c="dimmed">月售 0</Text>
+            <Text size="xs" c="dimmed">库存 999</Text>
+          </Group>
+          <Group gap={4} align="baseline" mt={4}>
+            <Text size="xs" c="red.7" fw={700}>¥</Text>
+            <Text size="xl" c="red.7" fw={700} style={{ lineHeight: 1 }}>{product.priceRef}</Text>
+          </Group>
+
+          {/* 操作按钮组 */}
+          <Group justify="flex-end" gap="xs" mt="auto">
+            <Button variant="outline" color="gray" size="compact-sm" radius="xl" fw={400} px="md" style={{ borderColor: '#ddd' }}>
+              价格/库存
+            </Button>
+            <Button variant="outline" color="gray" size="compact-sm" radius="xl" fw={400} px="md" style={{ borderColor: '#ddd' }}>
+              下架
+            </Button>
+            <Button
+              variant="outline"
+              color="gray"
+              size="compact-sm"
+              radius="xl"
+              fw={400}
+              px="md"
+              style={{ borderColor: '#ddd' }}
+              onClick={() => onEdit(product.id)}
+            >
+              编辑
+            </Button>
+          </Group>
+        </Stack>
+      </Flex>
+    </Box>
+  );
+};
 
 export default function ProductDashboardPage() {
   const router = useRouter();
+  const isMobile = useMediaQuery('(max-width: 48em)');
 
-  // 数据状态
+  // 状态管理
+  const [categories, setCategories] = useState<StoreCategory[]>([]);
+  const [activeMenuId, setActiveMenuId] = useState<string>('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [total, setTotal] = useState(0);
-
-  // 筛选状态
+  const [activeTab, setActiveTab] = useState<string | null>('ALL');
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string | null>('all');
-  const [statusFilter, setStatusFilter] = useState<string | null>('all');
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
-  // 分页状态
-  const [activePage, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-  // 加载数据
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
+  // 数据获取
+  const fetchCategories = useCallback(async () => {
     try {
+      const res = await http.get<StoreCategory[]>('/api/admin/categories');
+      const data = res.data || [];
+      setCategories(data);
+      // 如果没有选中的分类，且有分类数据，默认选中第一个
+      if (!activeMenuId && data.length > 0) {
+        setActiveMenuId(data[0].id);
+      } else if (data.length === 0) {
+        // 如果没有分类，默认选中未分类
+        setActiveMenuId('uncategorized');
+      }
+    } catch (e) {
+      console.error('Failed to fetch categories');
+    }
+  }, [activeMenuId]);
+
+  const fetchProducts = useCallback(async (reset = true) => {
+    if (!activeMenuId && categories.length > 0) return;
+
+    if (reset) {
+      setLoading(true);
+      setPage(1);
+    } else {
+      setLoadingMore(true);
+    }
+
+    try {
+      const currentPage = reset ? 1 : page + 1;
       const params = new URLSearchParams({
-        page: activePage.toString(),
+        status: activeTab === 'ALL' ? '' : activeTab || '',
+        search,
+        menuId: activeMenuId === 'uncategorized' ? '' : activeMenuId,
+        uncategorized: activeMenuId === 'uncategorized' ? 'true' : '',
+        page: currentPage.toString(),
         limit: pageSize.toString(),
       });
+      const res = await http.get<ApiResponse<Product>>(`/api/admin/products?${params.toString()}`);
 
-      if (search) params.append('search', search);
-      if (categoryFilter && categoryFilter !== 'all') params.append('category', categoryFilter);
-      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
-
-      const response = await http.get<ApiResponse>(`/api/admin/products?${params.toString()}`);
-      if (response && response.data) {
-        setProducts(response.data.data || []);
-        setTotal(response.data.total || 0);
+      if (reset) {
+        setProducts(res.data.data || []);
+      } else {
+        setProducts(prev => [...prev, ...(res.data.data || [])]);
+        setPage(currentPage);
       }
-    } catch (error) {
-      notifications.show({
-        title: '获取失败',
-        message: '获取产品列表失败，请稍后重试',
-        color: 'red',
-      });
+      setTotal(res.data.total || 0);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [activePage, pageSize, search, categoryFilter, statusFilter]);
+  }, [activeTab, search, activeMenuId, categories.length, page, pageSize]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetchCategories();
+  }, [fetchCategories]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除此商品吗？')) return;
+  useEffect(() => {
+    fetchProducts(true);
+  }, [activeTab, search, activeMenuId]);
 
-    try {
-      await http.delete(`/api/admin/products?id=${id}`);
-      notifications.show({
-        title: '删除成功',
-        message: '商品已成功删除',
-        color: 'green',
-      });
-      fetchProducts();
-    } catch (error) {
-      notifications.show({
-        title: '删除失败',
-        message: '删除商品失败，请稍后重试',
-        color: 'red',
-      });
+  // 滚动加载逻辑
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const { ref, entry } = useIntersection({
+    root: viewportRef.current,
+    threshold: 0,
+    rootMargin: '400px', // 提前 400px 触发加载，提升滚动流畅度
+  });
+
+  const hasMore = products.length < total;
+
+  useEffect(() => {
+    if (entry?.isIntersecting && hasMore && !loading && !loadingMore) {
+      fetchProducts(false);
     }
-  };
+  }, [entry?.isIntersecting, hasMore, loading, loadingMore, fetchProducts]);
 
-  const rows = products.map((product) => (
-    <Table.Tr key={product.id}>
-      <Table.Td>
-        <Group gap="sm">
-          {product.images?.[0] ? (
-            <Image src={product.images[0]} w={40} h={40} radius="sm" />
-          ) : (
-            <Box w={40} h={40} bg="gray.1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-               <IconPhoto size={20} color="gray" />
-            </Box>
-          )}
-          <Text size="sm" fw={500}>{product.name}</Text>
-        </Group>
-      </Table.Td>
-      <Table.Td>
-        <Badge variant="light">{product.category}</Badge>
-      </Table.Td>
-      <Table.Td>
-        <Text size="sm">¥{product.priceRef}</Text>
-      </Table.Td>
-      <Table.Td>
-        <Badge color={product.status === 'ACTIVE' ? 'green' : 'gray'}>
-          {product.status === 'ACTIVE' ? '上架' : '下架'}
-        </Badge>
-      </Table.Td>
-      <Table.Td>
-        <Text size="xs" c="dimmed">
-          {new Date(product.updatedAt).toLocaleString()}
-        </Text>
-      </Table.Td>
-      <Table.Td>
-        <Group gap={0} justify="flex-end">
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            onClick={() => router.push(`/dashboard/products/${product.id}`)}
-          >
-            <IconEdit size={16} stroke={1.5} />
-          </ActionIcon>
-          <Menu shadow="md" width={200}>
-            <Menu.Target>
-              <ActionIcon variant="subtle" color="gray">
-                <IconDots size={16} stroke={1.5} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item
-                color="red"
-                leftSection={<IconTrash size={14} />}
-                onClick={() => handleDelete(product.id)}
-              >
-                删除商品
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Group>
-      </Table.Td>
-    </Table.Tr>
-  ));
+  // 操作栏 (响应式复用)
+  const ActionButtons = (
+    <Group gap="xs" grow={isMobile}>
+      <UnstyledButton onClick={() => router.push('/dashboard/categories')}>
+        <Stack gap={2} align="center">
+          <IconCategory size={20} stroke={1.5} />
+          <Text size="xs" fw={500}>分类管理</Text>
+        </Stack>
+      </UnstyledButton>
+      <UnstyledButton>
+        <Stack gap={2} align="center">
+          <IconArrowsSort size={20} stroke={1.5} />
+          <Text size="xs" fw={500}>商品排序</Text>
+        </Stack>
+      </UnstyledButton>
+      <UnstyledButton>
+        <Stack gap={2} align="center">
+          <IconListCheck size={20} stroke={1.5} />
+          <Text size="xs" fw={500}>批量操作</Text>
+        </Stack>
+      </UnstyledButton>
+      <Button
+        leftSection={<IconPlus size={18} />}
+        radius="xl"
+        color="yellow.6"
+        size={isMobile ? 'md' : 'sm'}
+        onClick={() => router.push('/dashboard/products/new')}
+      >
+        商品新建
+      </Button>
+    </Group>
+  );
 
   return (
-    <Container size="xl">
-      <Stack gap="lg">
-        <Group justify="space-between">
-          <div>
-            <Title order={2}>商品管理</Title>
-            <Text c="dimmed" size="sm">管理您的店铺商品</Text>
-          </div>
-          <Button
-            leftSection={<IconPlus size={18} />}
-            onClick={() => router.push('/dashboard/products/new')}
-          >
-            新增商品
-          </Button>
-        </Group>
+    <Flex h="calc(100vh - 60px)" direction="column" bg="white">
+      {/* 顶部搜索区 & PC 操作栏 */}
+      <Box p="sm" bg="white" style={{ borderBottom: '1px solid #f0f0f0' }}>
+        <Flex gap="md" align="center">
+          <TextInput
+            placeholder="请输入商品名称/品牌/条码查找"
+            leftSection={<IconSearch size={18} color="#999" />}
+            rightSection={<ActionIcon variant="transparent" color="gray"><IconArrowsSort size={18} /></ActionIcon>}
+            radius="xl"
+            style={{ flex: 1 }}
+            value={search}
+            onChange={(e) => setSearch(e.currentTarget.value)}
+          />
+          {!isMobile && ActionButtons}
+        </Flex>
+      </Box>
 
-        <Card withBorder radius="md">
-          <Stack gap="md">
-            <Group grow>
-              <TextInput
-                placeholder="搜索商品名称..."
-                leftSection={<IconSearch size={16} />}
-                value={search}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.currentTarget.value)}
-              />
-              <Select
-                placeholder="选择分类"
-                data={[
-                  { value: 'all', label: '所有分类' },
-                  { value: 'BOUQUET', label: '花束' },
-                  { value: 'BASKET', label: '花篮' },
-                  { value: 'BOX', label: '花盒' },
-                ]}
-                value={categoryFilter}
-                onChange={setCategoryFilter}
-              />
-              <Select
-                placeholder="状态"
-                data={[
-                  { value: 'all', label: '所有状态' },
-                  { value: 'ACTIVE', label: '已上架' },
-                  { value: 'INACTIVE', label: '已下架' },
-                ]}
-                value={statusFilter}
-                onChange={setStatusFilter}
-              />
-              <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={fetchProducts}>
-                刷新
-              </Button>
-            </Group>
+      {/* 主体双栏布局 */}
+      <Flex style={{ flex: 1, overflow: 'hidden' }}>
+        {/* 左侧菜单导航 (带底部悬浮“未分类”) */}
+        <Box w={130} bg="#f8f8f8" style={{ borderRight: '1px solid #eee', position: 'relative' }}>
+          <Flex direction="column" h="100%">
+            <ScrollArea style={{ flex: 1 }}>
+              <Stack gap={0}>
+                {/* 动态菜单 */}
+                {categories.map((category) => (
+                  <UnstyledButton
+                    key={category.id}
+                    p="md"
+                    bg={activeMenuId === category.id ? 'white' : 'transparent'}
+                    style={{
+                      borderLeft: activeMenuId === category.id ? `${rem(4)} solid #fab005` : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                    onClick={() => setActiveMenuId(category.id)}
+                  >
+                    <Text size="sm" fw={activeMenuId === category.id ? 700 : 400} lineClamp={2}>
+                      {category.name}
+                    </Text>
+                  </UnstyledButton>
+                ))}
+              </Stack>
+            </ScrollArea>
 
-            <Box pos="relative">
-              <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
-              <ScrollArea>
-                <Table verticalSpacing="sm" highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>商品名称</Table.Th>
-                      <Table.Th>分类</Table.Th>
-                      <Table.Th>价格</Table.Th>
-                      <Table.Th>状态</Table.Th>
-                      <Table.Th>更新时间</Table.Th>
-                      <Table.Th />
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {rows.length > 0 ? rows : (
-                      <Table.Tr>
-                        <Table.Td colSpan={6}>
-                          <Text ta="center" py="xl" c="dimmed">暂无商品</Text>
-                        </Table.Td>
-                      </Table.Tr>
-                    )}
-                  </Table.Tbody>
-                </Table>
-              </ScrollArea>
+            {/* 底部悬浮：未分类 */}
+            <Box bg="#f8f8f8" style={{ borderTop: '1px solid #eee' }}>
+              <UnstyledButton
+                w="100%"
+                p="md"
+                bg={activeMenuId === 'uncategorized' ? 'white' : 'transparent'}
+                style={{
+                  borderLeft: activeMenuId === 'uncategorized' ? `${rem(4)} solid #fab005` : 'none',
+                }}
+                onClick={() => setActiveMenuId('uncategorized')}
+              >
+                <Group gap={4}>
+                  <Text size="sm" fw={activeMenuId === 'uncategorized' ? 700 : 400}>未分类</Text>
+                  <IconInfoCircle size={14} color="#999" />
+                </Group>
+              </UnstyledButton>
+            </Box>
+          </Flex>
+        </Box>
+
+        {/* 右侧商品列表区域 */}
+        <Box style={{ flex: 1, overflow: 'hidden' }} pos="relative">
+          <LoadingOverlay visible={loading} overlayProps={{ blur: 1 }} zIndex={10} />
+
+          <Flex direction="column" h="100%">
+            {/* 状态过滤 Tabs (美团样式) */}
+            <Box px="xs" py={4} bg="white">
+              <Tabs value={activeTab} onChange={setActiveTab} variant="pills">
+                <Tabs.List>
+                  <Tabs.Tab value="ALL">全部 {total || ''}</Tabs.Tab>
+                  <Tabs.Tab value="ACTIVE">售卖中</Tabs.Tab>
+                  <Tabs.Tab value="SOLD_OUT">已售罄</Tabs.Tab>
+                  <Tabs.Tab value="INACTIVE">已下架</Tabs.Tab>
+                </Tabs.List>
+              </Tabs>
             </Box>
 
-            <Group justify="space-between" mt="md">
-              <Text size="sm" c="dimmed">
-                共 {total} 条数据
-              </Text>
-              <Pagination total={Math.ceil(total / pageSize)} value={activePage} onChange={setPage} />
+            {/* 列表排序筛选栏 */}
+            <Group px="md" py="xs" justify="space-between" bg="#fafafa" style={{ borderBottom: '1px solid #f0f0f0' }}>
+              <Group gap="lg">
+                <UnstyledButton><Group gap={2}><Text size="xs" c="dimmed">创建时间</Text><IconChevronDown size={12} color="#999" /></Group></UnstyledButton>
+                <UnstyledButton><Group gap={2}><Text size="xs" c="dimmed">月售</Text><IconChevronDown size={12} color="#999" /></Group></UnstyledButton>
+              </Group>
+              <UnstyledButton><Group gap={2}><Text size="xs" c="dimmed" fw={500}>筛选</Text><IconChevronDown size={12} color="#999" /></Group></UnstyledButton>
             </Group>
-          </Stack>
-        </Card>
-      </Stack>
-    </Container>
+
+            {/* 滚动列表 */}
+            <ScrollArea style={{ flex: 1 }} px="md" viewportRef={viewportRef}>
+              {products.length > 0 ? (
+                <>
+                  {products.map((p) => (
+                    <ProductItem key={p.id} product={p} onEdit={(id) => router.push(`/dashboard/products/${id}`)} />
+                  ))}
+
+                  {/* 滚动加载指示器 */}
+                  <Box ref={ref} py="xl">
+                    {hasMore ? (
+                      <Flex justify="center" align="center" gap="xs">
+                        <Loader size="xs" color="yellow.6" />
+                        <Text size="xs" c="dimmed">正在加载更多商品...</Text>
+                      </Flex>
+                    ) : products.length > 0 && (
+                      <Text size="xs" c="dimmed" ta="center">已经到底啦 ~</Text>
+                    )}
+                  </Box>
+                </>
+              ) : !loading && (
+                <Stack align="center" py={100} gap="xs">
+                  <IconPhoto size={48} color="#eee" />
+                  <Text c="dimmed" size="sm">该分类下暂无商品</Text>
+                </Stack>
+              )}
+              {/* 底部留白，防止被移动端悬浮按钮挡住 */}
+              {isMobile && <Box h={80} />}
+            </ScrollArea>
+          </Flex>
+        </Box>
+      </Flex>
+
+      {/* 移动端底部悬浮操作栏 */}
+      {isMobile && (
+        <Box
+          p="xs"
+          bg="white"
+          style={{
+            borderTop: '1px solid #eee',
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.05)'
+          }}
+        >
+          {ActionButtons}
+        </Box>
+      )}
+    </Flex>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { AppShell, Burger, Group, NavLink, Title, Text, Button, Stack, rem, Avatar, Menu, ScrollArea } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
   IconDashboard,
   IconBox,
@@ -68,6 +68,7 @@ const navigation = [
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [opened, { toggle }] = useDisclosure();
+  const isMobile = useMediaQuery('(max-width: 48em)');
   const pathname = usePathname();
   const router = useRouter();
   const { settings } = useSettings();
@@ -109,13 +110,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 60, collapsed: isMobile }}
       navbar={{
         width: 280,
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
-      padding="md"
+      padding={{ base: 0, sm: 'md' }}
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">

@@ -2,77 +2,80 @@ import prisma from '@/lib/prisma';
 
 // 获取商品列表
 export async function getProducts(params: {
+  storeId?: string;
   page?: number;
   pageSize?: number;
-  category?: string;
+  categoryId?: string;
+  uncategorized?: boolean;
   status?: string;
-  style?: string;
-  colorSeries?: string;
-  targetAudience?: string;
+  styleId?: string;
   search?: string;
 }) {
-  const { page = 1, pageSize = 10, category, status, style, colorSeries, targetAudience, search } = params;
+  const { storeId, page = 1, pageSize = 10, categoryId, uncategorized, status, styleId, search } = params;
   const skip = (page - 1) * pageSize;
 
   try {
     // 构建查询条件
     const where: any = {};
 
+    if (storeId) {
+      where.storeId = storeId;
+    }
+
     if (status) {
       where.status = status;
     }
 
-    if (category) {
-      where.category = category;
-    }
-
-    if (style) {
-      where.style = style;
-    }
-
-    if (colorSeries) {
-      where.colorSeries = colorSeries;
-    }
-
-    if (search) {
-      // 搜索商品名称（MySQL 使用 LIKE）
-      where.name = {
-        contains: search
+    if (uncategorized) {
+      // 查找没有任何分类关联的商品
+      where.categories = {
+        none: {},
+      };
+    } else if (categoryId) {
+      // 查找属于特定分类的商品
+      where.categories = {
+        some: {
+          categoryId: categoryId,
+        },
       };
     }
 
-    // 先获取所有符合基本条件的商品
-    const [allProducts, totalCount] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy: {
-          createdAt: 'desc'
-        }
-      }),
-      prisma.product.count({ where })
-    ]);
-
-    // 在应用层过滤 targetAudience（JSON 数组字段）
-    let filteredProducts = allProducts;
-    if (targetAudience) {
-      filteredProducts = allProducts.filter(product => {
-        if (!product.targetAudience) return false;
-        const audienceArray = Array.isArray(product.targetAudience)
-          ? product.targetAudience
-          : JSON.parse(product.targetAudience as string);
-        return Array.isArray(audienceArray) && audienceArray.includes(targetAudience);
-      });
+    if (styleId) {
+      where.styleId = styleId;
     }
 
-    // 分页处理
-    const total = targetAudience ? filteredProducts.length : totalCount;
-    const paginatedProducts = filteredProducts.slice(skip, skip + pageSize);
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { displayId: { contains: search } },
+      ];
+    }
+
+    const [list, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+          style: true,
+        },
+      }),
+      prisma.product.count({ where }),
+    ]);
 
     return {
-      list: paginatedProducts,
+      list,
       total,
       page,
-      pageSize
+      pageSize,
     };
   } catch (error) {
     throw error;
@@ -98,23 +101,28 @@ export async function getProductById(id: string) {
 
 // 创建商品
 export async function createProduct(data: {
+  storeId: string;
+  displayId: string;
   name: string;
-  category?: string; // 店主自定义分类
-  style?: string; // 商品类型（中文）：花束、花篮等
-  storeCode?: string; // 商品编码
+  styleId?: string;
   priceRef: string;
   description?: string;
   images: any;
-  videos?: any;
-  materials: any[];
-  stock?: number; // 库存数量
+  materials: any;
   status: string;
   sortOrder: number;
+  categoryIds?: string[];
 }) {
+  const { categoryIds, ...rest } = data;
   try {
     const product = await prisma.product.create({
       data: {
-        ...data
+        ...rest,
+        categories: categoryIds ? {
+          create: categoryIds.map(id => ({
+            categoryId: id
+          }))
+        } : undefined
       }
     });
     return product;
@@ -128,24 +136,28 @@ export async function updateProduct(
   id: string,
   data: {
     name?: string;
-    category?: string; // 店主自定义分类
-    style?: string; // 商品类型（中文）：花束、花篮等
-    storeCode?: string; // 商品编码
+    styleId?: string;
     priceRef?: string;
     description?: string;
     images?: any;
-    videos?: any;
-    materials?: any[];
-    stock?: number; // 库存数量
+    materials?: any;
     status?: string;
     sortOrder?: number;
+    categoryIds?: string[];
   }
 ) {
+  const { categoryIds, ...rest } = data;
   try {
     const product = await prisma.product.update({
       where: { id },
       data: {
-        ...data
+        ...rest,
+        categories: categoryIds ? {
+          deleteMany: {},
+          create: categoryIds.map(cid => ({
+            categoryId: cid
+          }))
+        } : undefined
       }
     });
     return product;
