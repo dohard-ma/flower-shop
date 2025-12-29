@@ -34,6 +34,7 @@ const navigation = [
     icon: IconBox,
     children: [
       { name: '店铺商品管理', href: '/dashboard/products' },
+      { name: '分类管理', href: '/dashboard/categories' },
       { name: '订阅商品管理', href: '/dashboard/subscription-product' }
     ]
   },

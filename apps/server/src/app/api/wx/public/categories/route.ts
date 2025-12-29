@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return ApiResponseBuilder.error(traceId, '未找到店铺信息', 404);
     }
 
-    const categories = await prisma.category.findMany({
+    const categories = await prisma.storeCategory.findMany({
       where: {
         storeId: store.id,
         isVisible: true
@@ -26,12 +26,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 格式化输出，适配小程序端字段 (id -> _id)
+    // 格式化输出，适配小程序端字段 (id -> _id)，并保留 parentId 支持多级
     const formattedCategories = categories.map(cat => ({
       ...cat,
       _id: cat.id,
     }));
 
+    // 如果前端需要树形结构，可以在这里转换，但通常小程序端分类列表是扁平获取后再处理或直接展示
     return ApiResponseBuilder.success(traceId, formattedCategories);
   } catch (error: any) {
     console.error('[Public Categories GET] Error:', error);

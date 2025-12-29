@@ -1,0 +1,130 @@
+---
+trigger: model_decision
+description: Working within apps/miniprogram/ directory, specifically on .wxml, .wxss, or .scss files. 生效逻辑： 仅在处理小程序 UI 开发时触发。强制执行原子 CSS 算法、T-Shirt 字号映射及 TDesign 语义化色彩。严禁在非标目录下生成样式代码。
+---
+
+# 一人公司小程序开发全局规则 (微信小程序 + TDesign)
+
+## 0. 核心哲学 (Mental Models)
+
+我们将《思考的框架》应用于工程决策，确保代码在当下有效，且在未来可维护。
+
+- **奥卡姆剃刀 (Occam's Razor) - 极简原则**
+  - **规则**：如无必要，勿增实体。
+  - **应用**：能用 `atom.wxss` 组合解决的，绝不写新的 CSS 类。能用 `TDesign` 组件解决的，绝不手写组件。代码越少，Bug 越少。
+
+- **二阶思维 (Second-Order Thinking) - 后果推演**
+  - **规则**：不仅看当下的便利，更要看未来的代价。
+  - **应用**：现在写一个 `w-235` (魔数) 可能只需 1 秒，但未来修改设计时需要全局搜索，维护成本极高。因此，严禁为了“仅仅这一次”的便利而污染全局原子库。
+
+- **地图非疆域 (Map is not Territory) - 语义优先**
+  - **规则**：代码（地图）必须精准反映业务意图（疆域）。
+  - **应用**：不要用 `text-333`（描述表象）命名，要用 `text-main`（描述意图）。因为颜色值（疆域）可能会变，但业务意图（地图）是持久的。
+
+- **共时性 (Synchronicity) - 显隐同步**
+  - **规则**：结构与样式必须在同一时间、同一维度上保持“有意义的关联”。
+  - **应用**：WXML 结构应尽可能扁平，样式类名应直接反映视觉结果。看到类名（如 `flex-between`）应能立即在脑海中渲染出布局，无需跳转 CSS 文件确认。
+
+## 1. 原子 CSS 生成协议 (Generative Protocol)
+
+**给 AI 的指令**：不要死记硬背 `atom.wxss` 的内容。请遵循以下**4大生成算法**。如果需要的样式符合算法但不存在，请提示用户添加到全局原子库；如果违背算法，请使用内联 `style`。
+
+### 1.1 空间算法：数值即真理 (Literal Value)
+
+所有间距与尺寸，后缀数值直接代表 `rpx` 值。
+
+- **公式**：`{Prefix}-{Value}` -> `{Property}: {Value}rpx`
+- **梯度限制 (严格执行)**：
+  - **基础梯度**：`0, 4, 10, 20, 30, 40, 60, 100` (用于 margin/padding/gap)
+  - **组件白名单**：`120, 160, 200` (仅限 width/height，用于标准头像或封面图)
+- **前缀表**：
+  - `m/mt/mb/ml/mr` (Margin)
+  - `p/pt/pb/pl/pr` (Padding)
+  - `w/h` (Width/Height)
+- **✅ 正确**：`mt-20`, `w-120` (白名单内), `h-160` (白名单内)
+- **❌ 禁止**：`w-125` (非白名单), `h-340` (魔数), `mt-120` (间距通常不应这么大)
+
+### 1.2 布局算法：Tailwind 标准集 (Standard Layout)
+
+完全沿用 Tailwind CSS 的标准布局类名，不进行魔改。
+
+- **Flex**：`flex`, `flex-col`, `flex-row`, `flex-wrap`, `flex-1`, `flex-none`
+- **Align**：`justify-start/center/between/end`, `items-start/center/end/stretch`
+- **Position**：`relative`, `absolute`, `fixed`, `z-10`
+
+### 1.3 字体算法：T恤尺码映射 (T-Shirt Sizing)
+
+字号禁止使用数字后缀，强制使用语义化尺码。
+
+- **映射表**：
+  - `text-xs`   (24rpx / 辅助信息)
+  - `text-sm`   (26rpx / 正文-小)
+  - `text-base` (28rpx / 正文-标准)
+  - `text-lg`   (32rpx / 小标题)
+  - `text-xl`   (36rpx / 大标题)
+  - `text-2xl`  (48rpx / 特大数字)
+- **字重**：`font-bold` (粗体), `font-normal` (常规)
+
+### 1.4 色彩算法：业务语义化 (Business Semantic)
+
+严禁使用 HEX 值或颜色名作为后缀。必须指向业务意图。
+
+- **公式**：`{Property}-{Semantic}`
+- **语义词典**：
+  - `brand` (品牌色)
+  - `main` (一级正文 #333)
+  - `sub` (二级信息 #666)
+  - `placeholder` (弱化/占位 #999)
+  - `price` (价格/警示红)
+  - `white` (纯白)
+  - `page` (页面底色 #f5/f7)
+- **✅ 正确**：`text-main`, `bg-brand`, `border-sub`
+- **❌ 禁止**：`text-333`, `bg-blue`, `text-red`
+
+## 2. 样式落地决策树 (Decision Tree)
+
+AI 在编写样式时，需遵循“复杂度分级”原则：
+
+1. **原子级 (Atomic)**：
+    - **判定**：符合生成协议的通用样式（如 `flex`, `mt-20`, `text-sm`）。
+    - **行动**：**直接使用原子类**。如果原子库缺少标准梯度（如 `mb-40`），提示用户补充到 `atom.wxss`。
+
+2. **微调级 (Inline Style)**：
+    - **判定**：单一的、非标数值的、物理坐标类的样式。
+    - **场景**：
+        - 非标尺寸：`width: 33.33%`, `height: 85vh`
+        - 绝对定位坐标：`top: 13rpx`, `left: 50%`
+        - 动态样式：`opacity: {{opacity}}`, `transform: ...`
+    - **行动**：**使用内联 `style="..."`**。
+    - **理由**：避免为了一次性的“魔数”去发明一个难以维护的类名（避免命名污染）。
+
+3. **组件级 (Page Class)**：
+    - **判定**：复合的视觉样式组合，或包含伪类/动画。
+    - **场景**：复杂的卡片容器、特殊的渐变背景、带有特定圆角和阴影的浮层。
+    - **行动**：**写入当前页面的 `page.scss`**。
+    - **命名要求**：必须使用**视觉描述**，禁止使用**业务描述**。
+
+## 3. 局部样式命名规范 (Local Naming)
+
+当必须在 `page.wxss` 中编写自定义类时：
+
+- **原则**：命名描述“它长什么样”或“它在哪里”，而不是“它是什么业务”。
+- **❌ 错误 (业务耦合)**：
+  - `.product-image` (如果换成用户头像就不通用了)
+  - `.coupon-red-bg` (如果优惠券改成金色就不通了)
+  - `.submit-btn-wrapper` (如果换成提交按钮就不通用了)
+- **✅ 正确 (视觉解耦)**：
+  - `.cover-img` / `.avatar-circle`
+  - `.bg-highlight`
+  - `.fixed-bottom-bar` / `.float-trigger`
+
+## 4. 语言规范
+
+- **沟通语言**：所有解释、注释、提示信息必须使用【中文】。
+- **代码命名**：变量名、函数名保持英文。
+
+## 5. 格式规范
+
+1. 按分类存放
+2. 数值升序排列
+3. 严禁文件末尾堆砌

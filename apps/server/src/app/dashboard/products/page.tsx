@@ -53,6 +53,7 @@ export interface StoreCategory {
   id: string;
   name: string;
   sortOrder: number;
+  parentId?: string | null;
 }
 
 interface ApiResponse<T> {
@@ -126,7 +127,7 @@ export default function ProductDashboardPage() {
 
   // 状态管理
   const [categories, setCategories] = useState<StoreCategory[]>([]);
-  const [activeMenuId, setActiveMenuId] = useState<string>('');
+  const [activeMenuId, setActiveMenuId] = useState<string>('all');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -142,17 +143,10 @@ export default function ProductDashboardPage() {
       const res = await http.get<StoreCategory[]>('/api/admin/categories');
       const data = res.data || [];
       setCategories(data);
-      // 如果没有选中的分类，且有分类数据，默认选中第一个
-      if (!activeMenuId && data.length > 0) {
-        setActiveMenuId(data[0].id);
-      } else if (data.length === 0) {
-        // 如果没有分类，默认选中未分类
-        setActiveMenuId('uncategorized');
-      }
     } catch (e) {
       console.error('Failed to fetch categories');
     }
-  }, [activeMenuId]);
+  }, []);
 
   const fetchProducts = useCallback(async (reset = true) => {
     if (!activeMenuId && categories.length > 0) return;
@@ -169,7 +163,7 @@ export default function ProductDashboardPage() {
       const params = new URLSearchParams({
         status: activeTab === 'ALL' ? '' : activeTab || '',
         search,
-        menuId: activeMenuId === 'uncategorized' ? '' : activeMenuId,
+        menuId: (activeMenuId === 'all' || activeMenuId === 'uncategorized') ? '' : activeMenuId,
         uncategorized: activeMenuId === 'uncategorized' ? 'true' : '',
         page: currentPage.toString(),
         limit: pageSize.toString(),
@@ -196,6 +190,24 @@ export default function ProductDashboardPage() {
   useEffect(() => {
     fetchProducts(true);
   }, [activeTab, search, activeMenuId]);
+
+  // 辅助函数：获取树形分类
+  const getTreeCategories = () => {
+    const rootNodes = categories.filter(c => !c.parentId);
+    const sortedNodes: (StoreCategory & { depth: number })[] = [];
+
+    const addChildren = (parent: StoreCategory, depth: number) => {
+      sortedNodes.push({ ...parent, depth });
+      const children = categories.filter(c => c.parentId === parent.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+      children.forEach(child => addChildren(child, depth + 1));
+    };
+
+    rootNodes.sort((a, b) => a.sortOrder - b.sortOrder)
+      .forEach(root => addChildren(root, 0));
+
+    return sortedNodes;
+  };
 
   // 滚动加载逻辑
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -279,21 +291,41 @@ export default function ProductDashboardPage() {
         {/* 左侧菜单导航 (带底部悬浮“未分类”) */}
         <Box w={isMobile ? 110 : 160} bg="#f8f8f8" style={{ borderRight: '1px solid #eee', position: 'relative' }}>
           <Flex direction="column" h="100%">
+            {/* 顶部固定：全部 */}
+            <Box bg={activeMenuId === 'all' ? 'white' : '#f0f0f0'} style={{ borderBottom: '1px solid #eee' }}>
+              <UnstyledButton
+                w="100%"
+                p={isMobile ? "md" : "lg"}
+                style={{
+                  borderLeft: activeMenuId === 'all' ? `${rem(4)} solid #fab005` : 'none',
+                }}
+                onClick={() => setActiveMenuId('all')}
+              >
+                <Text size="sm" fw={activeMenuId === 'all' ? 700 : 400}>全部</Text>
+              </UnstyledButton>
+            </Box>
+
             <ScrollArea style={{ flex: 1 }}>
               <Stack gap={0}>
                 {/* 动态菜单 */}
-                {categories.map((category) => (
+                {getTreeCategories().map((category) => (
                   <UnstyledButton
                     key={category.id}
-                    p={isMobile ? "md" : "lg"}
+                    p={isMobile ? "xs" : "sm"}
                     bg={activeMenuId === category.id ? 'white' : 'transparent'}
                     style={{
                       borderLeft: activeMenuId === category.id ? `${rem(4)} solid #fab005` : 'none',
+                      paddingLeft: rem(category.depth * 16 + (isMobile ? 12 : 16)),
                       transition: 'all 0.2s'
                     }}
                     onClick={() => setActiveMenuId(category.id)}
                   >
-                    <Text size="sm" fw={activeMenuId === category.id ? 700 : 400} lineClamp={2}>
+                    <Text
+                      size="sm"
+                      fw={activeMenuId === category.id ? 700 : 400}
+                      lineClamp={2}
+                      c={category.depth > 0 ? 'dimmed' : undefined}
+                    >
                       {category.name}
                     </Text>
                   </UnstyledButton>

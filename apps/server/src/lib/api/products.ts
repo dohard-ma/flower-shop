@@ -32,10 +32,18 @@ export async function getProducts(params: {
         none: {},
       };
     } else if (categoryId) {
-      // 查找属于特定分类的商品
+      // 获取该分类及其所有子分类的 ID
+      const subCategories = await prisma.storeCategory.findMany({
+        where: { parentId: categoryId },
+        select: { id: true }
+      });
+
+      const categoryIds = [categoryId, ...subCategories.map(c => c.id)];
+
+      // 查找属于这些分类之一的商品
       where.categories = {
         some: {
-          categoryId: categoryId,
+          categoryId: { in: categoryIds },
         },
       };
     }

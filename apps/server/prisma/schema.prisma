@@ -28,11 +28,12 @@ model Store {
   isActive      Boolean  @default(true) // 租户状态开关
 
   // --- 关联关系 ---
-  users         User[]
-  products      Product[]
-  productStyles   ProductStyle[]   // ✅ 对应 ProductStyle
-  storeCategories StoreCategory[]  // ✅ 对应 StoreCategory
-  loginTickets  LoginTicket[]
+  users           User[]
+  products        Product[]
+  productStyles   ProductStyle[]   
+  storeCategories StoreCategory[]  
+  loginTickets    LoginTicket[]
+  channels        Channel[]        
 
   createdAt     DateTime @default(now())
   @@map("stores")
@@ -93,12 +94,11 @@ model LoginTicket {
 }
 
 // ==========================================
-// 3. 商品与库存体系 (Inventory)
+// 3. 商品与 SKU 体系 (SPU-SKU Architecture)
 // ==========================================
 
 // [改名] 物理款式表 (原 Category)
 // 对应美团的 "款式"：花束、花盒、花篮
-// 逻辑：1对1，扁平结构 (去掉树状层级，因为款式很少)
 model ProductStyle {
   id          String    @id @default(cuid())
   storeId     String
@@ -107,15 +107,15 @@ model ProductStyle {
   name        String    // 如: "韩式花束", "手提花盒", "开业花篮"
   sortOrder   Int       @default(0)
 
-  // 关联：一个款式对应多个商品
   products    Product[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@map("product_styles") // 表名变更
+  @@map("product_styles") 
 }
 
+// SPU (Standard Product Unit) - 商品集合表
 model Product {
   id            String   @id @default(cuid())
   storeId       String
@@ -123,31 +123,34 @@ model Product {
 
   displayId     String   @unique // 商品展示短号
 
-  // --- 基础信息 ---
-  name          String   // 商品名称
+  // --- SPU 基础信息 ---
+  name          String   // 商品大名，如 "韩式碎冰蓝"
   description   String?  @db.Text
-  images        Json     // 图片列表
-  status        String   @default("ACTIVE") // ACTIVE(上架), INACTIVE(下架/草稿)
+  images        Json     // 主图列表
+  status        String   @default("ACTIVE") // SPU 级总开关
 
-  // --- 价格与成本 (BOM) ---
-  priceRef      Decimal  @default(0.00) @db.Decimal(10, 2) // 展示价格 (缓存计算结果)
+  // --- 核心变更：库存与价格下放至 Variant ---
+  // [注意] 原 stock, costPrice, storeCode 已移除，请查阅 ProductVariant 表
+
+  // --- 属性 (从美团 JSON 提取的 SPU 级属性) ---
+  mainFlower    String?  // 主花材
+  colorSeries   String?  // 色系
   materials     Json     // 花材配方 (BOM)
 
-  // --- 规格属性 ---
-  size          String?  // 尺寸
-  colorSeries   String?  // 色系 (RED, PINK...)
-
-  // --- 1. 款式 (物理形态) ---
-  // 对应美团的 "款式"，必选，单选
-  styleId       String?   // [变更] 从 categoryId 改名
+  // --- 关系 ---
+  styleId       String?
   style         ProductStyle? @relation(fields: [styleId], references: [id])
+  
+  // 🟢 [分类] 依然挂在 SPU 上，因为分类是打给整个商品的
+  categories    CategoryOnProduct[] 
 
-  // --- 2. 店内分类 (营销展示) ---
-  // 对应美团的 "店内分类"，多选
-  categories    CategoryOnProduct[] // [变更] 语义更清晰
+  // 🟡 [渠道] SPU 级渠道控制 (上下架/展示价)
+  channels      ProductChannel[] 
+
+  // 🔴 [新增] 具体的规格/SKU (19枝, 33枝...)
+  variants      ProductVariant[]
 
   // --- 旧数据保留 ---
-  storeCode     String?  // 商家自定义编码
   sortOrder     Int      @default(0) // 全局默认排序
 
   createdAt     DateTime @default(now())
@@ -156,32 +159,140 @@ model Product {
   @@map("products")
 }
 
+// [新增] 规格/SKU 模型 - 对应美团的 "skus" 数组
+model ProductVariant {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // --- 核心：店内码 (你的唯一锚点) ---
+  // [变更] 从 Product 表移到了这里，对应截图里的 "3003101183112"
+  // 这是 SKU 级别的唯一锚点，脚本同步全靠它
+  storeCode     String?  
+
+  // --- 规格信息 ---
+  name          String   // "19枝", "33枝", "标准款"
+  stock         Int      @default(0) // 物理库存 (对应截图里的 99)
+  
+  // --- 内部基准价 ---
+  costPrice     Decimal  @default(0.00) @db.Decimal(10, 2)
+  price         Decimal  @default(0.00) @db.Decimal(10, 2) // 内部零售指导价
+
+  // --- 渠道差异化数据 (JSON) ---
+  // 结构示例：
+  // {
+  //   "meituan": { "price": 218, "externalId": "300310...", "discount_price": 178 },
+  //   "douyin": { "price": 199 }
+  // }
+  channelData   Json?    
+
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([productId, name]) // 同一个商品下不能有两个 "19枝"
+  @@index([storeCode]) // 加速同步脚本查找
+  @@map("product_variants")
+}
+
 // ==========================================
-// 4. 营销与展示体系 (Showcase)
+// 4. 渠道分发体系 (Distribution)
 // ==========================================
 
-// [改名] 店内分类表 (原 ShowcaseCategory)
-// 对应美团的 "店内分类"：热销、七夕、送女友
-// 逻辑：多对多，支持批量操作
+model Channel {
+  id        String   @id @default(cuid())
+  storeId   String   // 支持多店多渠道配置
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  code      String   // 渠道代号: "meituan", "douyin", "jd", "wechat_mini"
+  name      String   // 渠道名称: "美团点评", "抖音团购"
+  
+  // --- 渠道配置 ---
+  config    Json?    // 预留: API Key, App Secret 等
+
+  // 关联
+  products  ProductChannel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storeId, code]) // 同一家店不能有两个 "meituan"
+  @@map("channels")
+}
+
+// 商品-渠道 关联表 (SPU Level)
+// 核心用途：列表页极速展示、整体上下架
+model ProductChannel {
+  id          String   @id @default(cuid())
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  channelId   String
+  channel     Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  // --- 语义变化区 ---
+  
+  // [展示价] 用于小程序列表页展示 "￥199 起"
+  // 同步脚本在写入 SKU 价格时，应顺便把最低价更新到这里
+  price       Decimal  @default(0.00) @db.Decimal(10, 2) 
+  
+  // [SPU ID] 对应美团的 SPU ID (非 SKU ID)
+  externalId  String?  
+  
+  // [总开关] 即使 SKU 有库存，如果这里是 false，整个商品在该渠道下架
+  isListed    Boolean  @default(false) 
+
+  // [同步状态] 用于脚本监控
+  syncStatus  String?  // "SYNCED", "PENDING", "ERROR"
+  lastSyncAt  DateTime? // 上次同步时间
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 复合唯一索引：确保一个商品在一个渠道只有一条记录
+  @@unique([productId, channelId])
+  @@index([externalId]) 
+  @@map("product_channels")
+}
+
+// ==========================================
+// 5. 营销与展示体系 (Showcase)
+// ==========================================
+
 model StoreCategory {
   id          String   @id @default(cuid())
   storeId     String
   store       Store    @relation(fields: [storeId], references: [id])
 
-  name        String   // 如: "七夕限定"
+  name        String   // 核心锚点：既是展示名，也是跨平台同步的匹配键
   icon        String?
   sortOrder   Int      @default(0)
-  isVisible   Boolean  @default(true)
+  
+  // 总开关：关掉后所有渠道都不显示
+  isVisible   Boolean  @default(true) 
+
+  // 渠道可见性控制 (Channel Visibility)
+  // 如果不存，默认全渠道可见。如果存了 ['wechat_mini']，则美团/抖音不显示。
+  visibleChannels  Json?  
+
+  // --- 多级分类 ---
+  parentId    String?  // 父级分类ID
+  parent      StoreCategory?   @relation("SubCategories", fields: [parentId], references: [id], onDelete: Cascade)
+  children    StoreCategory[]  @relation("SubCategories")
 
   products    CategoryOnProduct[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("store_categories") // 表名变更
+  // 复合唯一索引：确保同一家店里没有重名的分类
+  @@unique([storeId, name]) 
+  @@map("store_categories") 
 }
 
-// 关联表 (Join Table)
 model CategoryOnProduct {
   productId   String
   product     Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -196,7 +307,7 @@ model CategoryOnProduct {
 }
 
 // ==========================================
-// 5. 基础设施
+// 6. 基础设施
 // ==========================================
 
 // 全局流水号 (用于生成短ID)

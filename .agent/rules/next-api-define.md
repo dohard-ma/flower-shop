@@ -1,0 +1,111 @@
+---
+trigger: model_decision
+description: Creating or editing files under the app/api/ path of the flower-shop project. 生效逻辑： 仅在服务端路由开发时触发。强制执行统一响应格式（ApiResponseBuilder）、Zod 校验、以及基于目录前缀（/admin, /wx）的权限矩阵审计。
+---
+
+# Next.js API Route 定义规范
+
+本规范旨在确保 `flower-shop` 项目服务器端（Next.js）的 API 路由实现保持高度一致，简化分层结构，并统一响应格式。
+
+## 1. 核心原则
+
+- **直接数据库访问**：在 API Route 文件中直接使用 `@/lib/prisma` 实例进行数据库操作。
+- **统一响应格式**：所有请求必须通过 `@/lib/api-response` 中的 `ApiResponseBuilder` 返回。
+- **数据校验**：使用 `zod` 定义 Schema 并对请求参数进行校验。
+- **上下文透明化**：绝不手动解析 JWT 或 TraceID，统一从中间件注入的 Header 中获取。
+
+## 2. 目录与权限约定
+
+| 路径前缀 | 鉴权要求 | 租户要求 (`appId`) | 适用场景 |
+| :--- | :--- | :--- | :--- |
+| `/api/public` | 无需登录 | **不需要** | 全局公共接口 |
+| `/api/wx/public` | 无需登录 | **必须** | 小程序端免登录接口 (如：商品展示) |
+| `/api/wx/users` | 无需登录 | **必须** | 小程序登录/注册接口 |
+| `/api/wx` | 需登录 (User/Admin) | **必须** | 小程序端用户接口 (如：我的订单) |
+| `/api/wx/admin` | 需登录 (Admin) | **必须** | 小程序端管理员接口 (如：分类管理) |
+| `/api/admin` | 需登录 (Admin) | **不需要** | PC 管理后台接口 |
+
+### 2.1 角色兼容性逻辑 (Super-User)
+
+项目采用“管理员向下兼容”的权限策略：
+
+- **Admin 角色** 签发的 Token 使用 `JWT_ADMIN_SECRET`。
+- **User 角色** 签发的 Token 使用 `JWT_USER_SECRET`。
+- **验证逻辑**：
+  - 在 `/api/wx`（普通用户路径）下，中间件会优先尝试 User 密钥，若失败则尝试 Admin 密钥。**这意味着管理员可以正常使用所有普通用户功能**。
+  - 在 `/api/wx/admin` 或 `/api/admin`（管理路径）下，仅接受 Admin 角色且必须使用 Admin 密钥验证。
+
+### 2.2 扫码登录权限逻辑 (QR Auth Flow)
+
+管理后台扫码登录涉及 Web 端（匿名）与小程序端（实名管理员）的跨端交互，其权限逻辑如下：
+
+1. **Web 端票据申请**：`POST /api/admin/auth/ticket`。
+    - **权限**：**无需登录 (Whitelist)**。
+    - **逻辑**：根据 `storeCode` 生成 `LoginTicket`，返回小程序码。
+2. **Web 端状态轮询**：`GET /api/admin/auth/ticket/[id]`。
+    - **权限**：**无需登录 (Whitelist)**。
+    - **逻辑**：检查票据状态。仅在状态为 `CONFIRMED` 时返回生成的管理员 JWT Token。
+3. **小程序端扫码确认**：`POST /api/wx/admin/login-confirm`。
+    - **权限**：**需登录 (Admin)**。
+    - **逻辑**：必须由已登录且拥有 `ADMIN` 角色的小程序用户调用。校验通过后，将管理员 Token 写入票据并更新状态为 `CONFIRMED`。
+
+> **安全注意**：虽然 Web 端接口在白名单中，但其仅返回混淆后的 base64 图片或加密后的 Token（仅在确认后），确保了流程的安全性。
+
+## 3. 上下文获取 (Context Injection)
+
+中间件已处理所有拦截逻辑。在 Route Handler 中使用以下方式获取上下文：
+
+```typescript
+function getContext(request: NextRequest) {
+  return {
+    traceId: request.headers.get('X-Trace-ID')!, // 必有
+    appId: request.headers.get('x-wechat-appid'), // 仅 /api/wx/** 有
+    userId: request.headers.get('x-user-id'),     // 仅需登录接口有
+    role: request.headers.get('x-user-role') as 'admin' | 'user', // 角色值为小写
+    storeId: request.headers.get('x-store-id'),    // 仅需登录接口有
+  };
+}
+```
+
+## 4. 代码实现规范
+
+### 4.1 响应处理
+
+- **成功响应**：`ApiResponseBuilder.success(traceId, data)`。
+- **错误响应**：`ApiResponseBuilder.error(traceId, message, statusCode, details)`。
+
+### 4.2 示例模板 (小程序管理员接口)
+
+```typescript
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { ApiResponseBuilder } from '@/lib/api-response';
+import prisma from '@/lib/prisma';
+import getContext from '@/lib/get-context';
+
+const schema = z.object({
+  name: z.string().min(1, '名称不能为空'),
+});
+
+export async function POST(request: NextRequest) {
+  const { traceId, storeId } = getContext(request);
+
+  try {
+    const body = await request.json();
+    const validation = schema.safeParse(body);
+
+    if (!validation.success) {
+      return ApiResponseBuilder.error(traceId, '数据校验失败', 400);
+    }
+
+    const result = await prisma.yourModel.create({
+      data: { ...validation.data, storeId }
+    });
+
+    return ApiResponseBuilder.success(traceId, result);
+  } catch (error: any) {
+    console.error(`[API Error] ${traceId}:`, error);
+    return ApiResponseBuilder.error(traceId, '操作失败', 500);
+  }
+}
+```

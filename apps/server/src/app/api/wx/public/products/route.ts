@@ -54,8 +54,29 @@ export async function GET(request: NextRequest) {
       storeId: store.id,
       status: 'ACTIVE'
     };
-    if (categoryId) where.categoryId = categoryId;
-    if (style) where.style = style;
+
+    // 店内分类过滤 (多对多关系)
+    if (categoryId) {
+      // 获取该分类及其所有子分类的 ID
+      const subCategories = await prisma.storeCategory.findMany({
+        where: { parentId: categoryId },
+        select: { id: true }
+      });
+
+      const categoryIds = [categoryId, ...subCategories.map(c => c.id)];
+
+      where.categories = {
+        some: {
+          categoryId: { in: categoryIds }
+        }
+      };
+    }
+
+    // 物理款式过滤 (单选)
+    if (style) {
+      where.styleId = style;
+    }
+
     if (colorSeries) where.colorSeries = colorSeries;
     if (search) where.name = { contains: search };
 
