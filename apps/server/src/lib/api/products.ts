@@ -17,7 +17,7 @@ export async function getProducts(params: {
 
   try {
     // 构建查询条件
-    const where: any = {};
+    const where: import('@prisma/client').Prisma.ProductWhereInput = {};
 
     if (storeId) {
       where.storeId = storeId;
@@ -85,6 +85,16 @@ export async function getProducts(params: {
             },
           },
           style: true,
+          variants: {
+            orderBy: {
+              sortOrder: 'asc'
+            }
+          },
+          channels: {
+            include: {
+              channel: true
+            }
+          }
         },
       }),
       prisma.product.count({ where }),
