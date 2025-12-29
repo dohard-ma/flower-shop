@@ -95,5 +95,12 @@ export const http = {
     }),
 
   delete: <T = any>(url: string, options?: RequestOptions) =>
-    request<T>(url, { ...options, method: 'DELETE' })
+    request<T>(url, { ...options, method: 'DELETE' }),
+
+  patch: <T = any>(url: string, data?: any, options?: RequestOptions) =>
+    request<T>(url, {
+      ...options,
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    })
 };

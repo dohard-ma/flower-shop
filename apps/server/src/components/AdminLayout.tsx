@@ -33,38 +33,12 @@ const navigation = [
     name: '商品管理',
     icon: IconBox,
     children: [
-      { name: '店铺商品管理', href: '/dashboard/products' },
+      { name: '商品管理', href: '/dashboard/products' },
       { name: '分类管理', href: '/dashboard/categories' },
-      { name: '订阅商品管理', href: '/dashboard/subscription-product' }
+      // 渠道管理
+      { name: '渠道管理', href: '/dashboard/channels' },
     ]
   },
-  {
-    name: '用户管理',
-    icon: IconUsers,
-    children: [
-      { name: '用户列表', href: '/dashboard/users' },
-      { name: '通知记录', href: '/dashboard/notification-records' }
-    ]
-  },
-  {
-    name: '系统设置',
-    icon: IconSettings,
-    children: [
-      { name: '优惠券管理', href: '/dashboard/coupons' },
-      { name: '节气管理', href: '/dashboard/seasons' },
-      { name: '封面管理', href: '/dashboard/covers' },
-      { name: '通知模板管理', href: '/dashboard/notification-templates' },
-      { name: '通知场景管理', href: '/dashboard/notification-scenes' }
-    ]
-  },
-  {
-    name: '模板',
-    icon: IconFolder,
-    children: [
-      { name: '表格', href: '/dashboard/templates/tables' },
-      { name: '表单', href: '/dashboard/templates/forms' }
-    ]
-  }
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {

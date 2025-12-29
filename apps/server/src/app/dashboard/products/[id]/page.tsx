@@ -23,7 +23,7 @@ import {
   LoadingOverlay,
   Box,
 } from '@mantine/core';
-import { IconArrowLeft, IconSave } from '@tabler/icons-react';
+import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
 import { http } from '@/lib/request';
 import { notifications } from '@mantine/notifications';
 import { ImageUpload } from '@/components/image-upload';
@@ -226,7 +226,7 @@ export default function ProductEditPage() {
             </ActionIcon>
             <Title order={2}>{isNew ? '新增商品' : '编辑商品'}</Title>
           </Group>
-          <Button leftSection={<IconSave size={18} />} onClick={handleSave} loading={loading}>
+          <Button leftSection={<IconDeviceFloppy size={18} />} onClick={handleSave} loading={loading}>
             保存
           </Button>
         </Group>

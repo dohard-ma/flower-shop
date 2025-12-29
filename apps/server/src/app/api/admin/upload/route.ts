@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
     const uploadType = request.nextUrl.searchParams.get('type') as
       | 'coverImage'
       | 'images'
-      | 'giftCard'
+      | 'channelIcon'
       | null;
-    if (!uploadType || !['coverImage', 'images', 'giftCard'].includes(uploadType)) {
+    if (!uploadType || !['coverImage', 'images', 'channelIcon'].includes(uploadType)) {
       return NextResponse.json(
         {
           success: false,
@@ -41,6 +41,13 @@ export async function POST(request: NextRequest) {
     let directory = '';
     switch (uploadType) {
       case 'images':
+        directory = OSS_DIR.PRODUCTS.IMAGES;
+        break;
+      case 'channelIcon':
+        directory = OSS_DIR.CHANNELS.ICON;
+        break;
+      case 'coverImage':
+        // 如果有封面图目录可以加在这里，目前先复用产品图片目录或指定新目录
         directory = OSS_DIR.PRODUCTS.IMAGES;
         break;
     }

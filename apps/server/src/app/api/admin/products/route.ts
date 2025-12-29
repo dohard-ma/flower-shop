@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const uncategorized = searchParams.get('uncategorized') === 'true';
     const status = searchParams.get('status') || undefined;
     const search = searchParams.get('search') || undefined;
+    const channels = searchParams.get('channels')?.split(',').filter(Boolean) || undefined;
 
     const result = await getProducts({
       storeId: storeId!,
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
       categoryId,
       uncategorized,
       status: status === 'ALL' ? undefined : status,
-      search
+      search,
+      channelCodes: channels
     });
 
     return ApiResponseBuilder.success(traceId, {

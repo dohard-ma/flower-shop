@@ -10,8 +10,9 @@ export async function getProducts(params: {
   status?: string;
   styleId?: string;
   search?: string;
+  channelCodes?: string[];
 }) {
-  const { storeId, page = 1, pageSize = 10, categoryId, uncategorized, status, styleId, search } = params;
+  const { storeId, page = 1, pageSize = 10, categoryId, uncategorized, status, styleId, search, channelCodes } = params;
   const skip = (page - 1) * pageSize;
 
   try {
@@ -24,6 +25,16 @@ export async function getProducts(params: {
 
     if (status) {
       where.status = status;
+    }
+
+    if (channelCodes && channelCodes.length > 0) {
+      where.channels = {
+        some: {
+          channel: {
+            code: { in: channelCodes }
+          }
+        }
+      };
     }
 
     if (uncategorized) {

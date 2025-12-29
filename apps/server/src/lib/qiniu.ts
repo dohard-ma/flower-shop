@@ -28,6 +28,9 @@ export const OSS_DIR = {
   },
   AUDIO: {
     VOICE: 'huajianli/audio/voice'
+  },
+  CHANNELS: {
+    ICON: 'huajianli/channels/icons'
   }
 } as const;
 

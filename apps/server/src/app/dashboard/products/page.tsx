@@ -20,6 +20,7 @@ import {
   Divider,
   Badge,
   Loader,
+  MultiSelect,
 } from '@mantine/core';
 import { useMediaQuery, useIntersection } from '@mantine/hooks';
 import {
@@ -54,6 +55,12 @@ export interface StoreCategory {
   name: string;
   sortOrder: number;
   parentId?: string | null;
+}
+
+export interface Channel {
+  id: string;
+  code: string;
+  name: string;
 }
 
 interface ApiResponse<T> {
@@ -134,6 +141,8 @@ export default function ProductDashboardPage() {
   const [total, setTotal] = useState(0);
   const [activeTab, setActiveTab] = useState<string | null>('ALL');
   const [search, setSearch] = useState('');
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
@@ -145,6 +154,15 @@ export default function ProductDashboardPage() {
       setCategories(data);
     } catch (e) {
       console.error('Failed to fetch categories');
+    }
+  }, []);
+
+  const fetchChannels = useCallback(async () => {
+    try {
+      const res = await http.get<Channel[]>('/api/admin/channels');
+      setChannels(res.data || []);
+    } catch (e) {
+      console.error('Failed to fetch channels');
     }
   }, []);
 
@@ -163,6 +181,7 @@ export default function ProductDashboardPage() {
       const params = new URLSearchParams({
         status: activeTab === 'ALL' ? '' : activeTab || '',
         search,
+        channels: selectedChannels.join(','),
         menuId: (activeMenuId === 'all' || activeMenuId === 'uncategorized') ? '' : activeMenuId,
         uncategorized: activeMenuId === 'uncategorized' ? 'true' : '',
         page: currentPage.toString(),
@@ -185,11 +204,12 @@ export default function ProductDashboardPage() {
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+    fetchChannels();
+  }, [fetchCategories, fetchChannels]);
 
   useEffect(() => {
     fetchProducts(true);
-  }, [activeTab, search, activeMenuId]);
+  }, [activeTab, search, activeMenuId, selectedChannels]);
 
   // 辅助函数：获取树形分类
   const getTreeCategories = () => {
@@ -272,18 +292,35 @@ export default function ProductDashboardPage() {
     >
       {/* 顶部搜索区 & PC 操作栏 */}
       <Box p="sm" bg="white" style={{ borderBottom: '1px solid #f0f0f0' }}>
-        <Flex gap="md" align="center">
-          <TextInput
-            placeholder="请输入商品名称/品牌/条码查找"
-            leftSection={<IconSearch size={18} color="#999" />}
-            rightSection={<ActionIcon variant="transparent" color="gray"><IconArrowsSort size={18} /></ActionIcon>}
+        <Stack gap="xs">
+          <Flex gap="md" align="center">
+            <TextInput
+              placeholder="请输入商品名称/品牌/条码查找"
+              leftSection={<IconSearch size={18} color="#999" />}
+              rightSection={<ActionIcon variant="transparent" color="gray"><IconArrowsSort size={18} /></ActionIcon>}
+              radius="xl"
+              style={{ flex: 1 }}
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+            />
+            {!isMobile && ActionButtons}
+          </Flex>
+          <MultiSelect
+            data={channels.map(c => ({ value: c.code, label: c.name }))}
+            placeholder="筛选渠道"
+            size="xs"
             radius="xl"
-            style={{ flex: 1 }}
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
+            clearable
+            searchable
+            value={selectedChannels}
+            onChange={setSelectedChannels}
+            styles={{
+                input: {
+                    minHeight: rem(32),
+                }
+            }}
           />
-          {!isMobile && ActionButtons}
-        </Flex>
+        </Stack>
       </Box>
 
       {/* 主体双栏布局 */}
