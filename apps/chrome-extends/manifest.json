@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "美团商家数据助手",
+  "version": "2.0",
+  "description": "美团商家后台数据自动化采集工具，支持商品、分类及排序数据的智能采集与同步",
+  "permissions": [
+    "sidePanel",
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "declarativeNetRequest"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    },
+    "default_title": "打开美团数据助手"
+  },
+  "host_permissions": [
+    "https://www.xiaohongshu.com/*",
+    "https://shangoue.meituan.com/*",
+    "http://localhost:3000/*",
+    "https://*.vercel.app/*",
+    "https://*.netlify.app/*",
+    "https://*.laohuoji.link/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "injector.js"
+      ],
+      "matches": [
+        "https://www.xiaohongshu.com/*",
+        "https://shangoue.meituan.com/*"
+      ]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.xiaohongshu.com/*",
+        "https://shangoue.meituan.com/*"
+      ],
+      "js": ["content.js"],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.xiaohongshu.com/*",
+        "https://shangoue.meituan.com/*"
+      ],
+      "js": ["injector.js"],
+      "all_frames": true,
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidebar-web.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src http://localhost:3000 https://*.vercel.app https://*.netlify.app https://*.laohuoji.link; connect-src http://localhost:3000 https://*.vercel.app https://*.netlify.app https://*.laohuoji.link;"
+  }
+}
