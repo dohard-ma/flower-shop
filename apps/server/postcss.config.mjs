@@ -1,8 +1,8 @@
 /** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
-    tailwindcss: {},
     'postcss-preset-mantine': {},
+    tailwindcss: {},
     'postcss-simple-vars': {
       variables: {
         'mantine-breakpoint-xs': '36em',

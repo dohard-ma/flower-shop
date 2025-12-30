@@ -1,6 +1,14 @@
-@tailwind base;
+@layer tailwind-base, mantine, tailwind-utilities;
+
+@layer tailwind-base {
+  @tailwind base;
+}
+
 @tailwind components;
-@tailwind utilities;
+
+@layer tailwind-utilities {
+  @tailwind utilities;
+}
 
 @layer base {
   :root {
@@ -71,9 +79,6 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings:
@@ -104,3 +109,4 @@
     -webkit-line-clamp: 3;
   }
 }
+

@@ -1,7 +1,7 @@
+import "./globals.css";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/dropzone/styles.css";
-import "./globals.css";
 import { Inter } from "next/font/google";
 import { SettingsProvider } from "@/contexts/settings-context";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
