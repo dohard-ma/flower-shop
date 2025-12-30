@@ -15,9 +15,46 @@ export async function GET(request: NextRequest) {
   const { traceId, storeId } = getContext(request);
 
   try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') || undefined;
+    const search = searchParams.get('search') || undefined;
+    const channels = searchParams.get('channels')?.split(',').filter(Boolean) || [];
+
+    // 构建商品过滤条件，用于统计数量
+    const productWhere: any = {};
+    if (status && status !== 'ALL') {
+      productWhere.status = status;
+    }
+    if (search) {
+      productWhere.OR = [
+        { name: { contains: search } },
+        { displayId: { contains: search } },
+      ];
+    }
+    if (channels.length > 0) {
+      productWhere.channels = {
+        some: {
+          channel: {
+            code: { in: channels }
+          }
+        }
+      };
+    }
+
     const categories = await prisma.storeCategory.findMany({
       where: {
         storeId: storeId!,
+      },
+      include: {
+        _count: {
+          select: { 
+            products: {
+              where: {
+                product: productWhere
+              }
+            } 
+          }
+        }
       },
       orderBy: [
         { sortOrder: 'asc' },

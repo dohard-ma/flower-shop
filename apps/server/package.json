@@ -52,6 +52,7 @@
     "qrcode": "^1.5.4",
     "react": "^19",
     "react-dom": "^19",
+    "react-infinite-scroll-component": "^6.1.1",
     "recharts": "latest",
     "sharp": "^0.33.0",
     "uuid": "^11.1.0",

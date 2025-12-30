@@ -76,7 +76,7 @@ export async function getProducts(params: {
         skip,
         take: pageSize,
         orderBy: {
-          createdAt: 'desc',
+          createdAt: 'asc',
         },
         include: {
           categories: {
@@ -115,7 +115,21 @@ export async function getProducts(params: {
 export async function getProductById(id: string) {
   try {
     const product = await prisma.product.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        variants: true,
+        channels: {
+          include: {
+            channel: true
+          }
+        },
+        style: true
+      }
     });
 
     if (!product) {

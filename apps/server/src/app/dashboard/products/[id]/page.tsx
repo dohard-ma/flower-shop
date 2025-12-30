@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
   Container,
@@ -22,6 +22,7 @@ import {
   Anchor,
   LoadingOverlay,
   Box,
+  MultiSelect,
 } from '@mantine/core';
 import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
 import { http } from '@/lib/request';
@@ -29,22 +30,23 @@ import { notifications } from '@mantine/notifications';
 import { ImageUpload } from '@/components/image-upload';
 
 // 产品类型定义
+export interface StoreCategory {
+  id: string;
+  name: string;
+}
+
 export interface Product {
   id: string;
   name: string;
-  category: string;
   images: string[];
   videos?: string[];
   priceRef: string;
-  materials: Array<{
-    name: string;
-    quantity?: number;
-    color?: string;
-    description?: string;
-  }>;
+  materials: any;
   status: string;
   description?: string;
   sortOrder: number;
+  categories: { category: StoreCategory }[];
+  styleId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,29 +54,26 @@ export interface Product {
 interface ProductFormData {
   name: string;
   description: string;
-  category: string;
+  categoryIds: string[]; // 修改为数组以支持多选
   priceRef: string;
   status: string;
   images: string[];
   videos: string[];
-  materials: Array<{
-    name: string;
-    quantity?: number;
-    color?: string;
-    description?: string;
-  }>;
+  materials: any;
+  styleId: string | null;
   sortOrder: number;
 }
 
 const initialFormData: ProductFormData = {
   name: "",
   description: "",
-  category: "BOUQUET",
+  categoryIds: [],
   priceRef: "",
   status: "ACTIVE",
   images: [],
   videos: [],
   materials: [],
+  styleId: null,
   sortOrder: 0,
 };
 
@@ -84,10 +83,25 @@ export default function ProductEditPage() {
   const isNew = !params.id || params.id === "new";
 
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
+  const [availableCategories, setAvailableCategories] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(!isNew);
+  const [initialLoading, setInitialLoading] = useState(true);
 
-  const fetchProduct = async (id: string) => {
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await http.get<StoreCategory[]>('/api/admin/categories');
+      if (res.success && Array.isArray(res.data)) {
+        setAvailableCategories(res.data.map(cat => ({
+          value: cat.id,
+          label: cat.name
+        })));
+      }
+    } catch (e) {
+      console.error('Failed to fetch categories');
+    }
+  }, []);
+
+  const fetchProduct = useCallback(async (id: string) => {
     setInitialLoading(true);
     try {
       const response = await http.get<{ product: Product }>(`/api/admin/products/${id}`);
@@ -96,12 +110,13 @@ export default function ProductEditPage() {
         setFormData({
           name: product.name,
           description: product.description || "",
-          category: product.category,
-          priceRef: product.priceRef,
+          categoryIds: product.categories?.map(c => c.category.id) || [],
+          priceRef: String(product.priceRef || ""),
           status: product.status,
           images: product.images || [],
           videos: product.videos || [],
           materials: product.materials || [],
+          styleId: product.styleId || null,
           sortOrder: product.sortOrder,
         });
       }
@@ -115,13 +130,19 @@ export default function ProductEditPage() {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
-    if (!isNew && params.id) {
-      fetchProduct(params.id as string);
-    }
-  }, [isNew, params.id]);
+    const init = async () => {
+      await fetchCategories();
+      if (!isNew && params.id) {
+        await fetchProduct(params.id as string);
+      } else {
+        setInitialLoading(false);
+      }
+    };
+    init();
+  }, [isNew, params.id, fetchCategories, fetchProduct]);
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -246,17 +267,16 @@ export default function ProductEditPage() {
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.currentTarget.value)}
                   />
-                  <Group grow>
-                    <Select
+                  <Group grow align="flex-start">
+                    <MultiSelect
                       label="分类"
-                      data={[
-                        { value: 'BOUQUET', label: '花束' },
-                        { value: 'BASKET', label: '花篮' },
-                        { value: 'BOX', label: '花盒' },
-                        { value: 'POTTED', label: '盆栽' },
-                      ]}
-                      value={formData.category}
-                      onChange={(val) => handleInputChange('category', val)}
+                      placeholder="请选择分类 (支持多选)"
+                      data={availableCategories}
+                      value={formData.categoryIds}
+                      onChange={(val) => handleInputChange('categoryIds', val)}
+                      searchable
+                      clearable
+                      required
                     />
                     <TextInput
                       label="价格"

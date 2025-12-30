@@ -11,7 +11,8 @@ import {
   IconFolder,
   IconUsers,
   IconChevronRight,
-  IconUser
+  IconUser,
+  IconRefresh
 } from '@tabler/icons-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -37,6 +38,8 @@ const navigation = [
       { name: '分类管理', href: '/dashboard/categories' },
       // 渠道管理
       { name: '渠道管理', href: '/dashboard/channels' },
+      // 数据同步
+      { name: '数据同步', href: '/dashboard/sync' },
     ]
   },
 ];
@@ -70,7 +73,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <NavLink
           key={item.name}
           label={item.name}
-          component={item.href ? Link : 'div'}
+          component={item.href ? (Link as any) : 'div'}
           href={item.href}
           leftSection={item.icon && <item.icon size="1.2rem" stroke={1.5} />}
           active={isActive}
@@ -141,7 +144,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </AppShell.Section>
 
         <AppShell.Section>
-          <Text size="xs" c="dimmed" ta="center" py="md" borderTop="1px solid var(--mantine-color-gray-2)">
+          <Text size="xs" c="dimmed" ta="center" py="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
             v1.0.0
           </Text>
         </AppShell.Section>

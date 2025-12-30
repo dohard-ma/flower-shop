@@ -86,37 +86,7 @@ async function main() {
     const isListed = sell_status === 0;
 
     try {
-      // 检查 SKU 是否已存在（核心去重逻辑）
-      const skuCodes = skus.map((s: any) => s.source_food_code).filter(Boolean);
-      const existingVariants = await prisma.productVariant.findMany({
-        where: { storeCode: { in: skuCodes } },
-        include: { product: { include: { channels: true } } }
-      });
-
-      if (existingVariants.length > 0) {
-        // 如果已存在，则进入“状态更新模式”
-        const productId = existingVariants[0].productId;
-        
-        await prisma.product.update({
-          where: { id: productId },
-          data: {
-            status: productStatus,
-            channels: meituanChannel ? {
-              updateMany: {
-                where: { channelId: meituanChannel.id },
-                data: { isListed: isListed }
-              }
-            } : undefined
-          }
-        });
-
-        console.log(`🔄 已更新状态 [${original_name}]: ${productStatus}`);
-        skippedCount++; // 依然记为跳过新建，但状态已更新
-        continue;
-      }
-
-      // 获取或创建款式 (ProductStyle)
-      // ... (中间代码保持不变)
+      // 1. 获取或创建款式 (ProductStyle)
       let styleId: string | undefined;
       if (style) {
         const styles = await prisma.productStyle.findMany({ where: { storeId: store.id, name: style } });
@@ -127,7 +97,7 @@ async function main() {
         styleId = styleObj.id;
       }
 
-      // 获取或创建分类 (StoreCategory)
+      // 2. 获取或创建分类 (StoreCategory)
       const categoryNames = categories ? categories.split(/[,，]/) : ["未分类"];
       const categoryIds: string[] = [];
       for (const catName of categoryNames) {
@@ -138,6 +108,52 @@ async function main() {
             create: { storeId: store.id, name: catName.trim() }
         });
         categoryIds.push(category.id);
+      }
+
+      // 3. 检查 SKU 是否已存在（核心去重逻辑）
+      const skuCodes = skus.map((s: any) => s.source_food_code).filter(Boolean);
+      const existingVariants = await prisma.productVariant.findMany({
+        where: { storeCode: { in: skuCodes } },
+        include: { product: { include: { channels: true } } }
+      });
+
+      const parsedImages = typeof images === 'string' ? images.split(',').filter(Boolean) : (Array.isArray(images) ? images : []);
+
+      if (existingVariants.length > 0) {
+        // 如果已存在，则进入“全量更新模式”
+        const productId = existingVariants[0].productId;
+        
+        await prisma.product.update({
+          where: { id: productId },
+          data: {
+            name: original_name,
+            status: productStatus,
+            mainFlower: main_flower || null,
+            colorSeries: color_system || null,
+            styleId: styleId || null,
+            images: parsedImages,
+            // 同步分类：先删除旧关联，再建立新关联
+            categories: {
+              deleteMany: {},
+              create: categoryIds.map(id => ({ categoryId: id }))
+            },
+            channels: meituanChannel ? {
+              // 注意：这里由于 schema 是 updateMany，所以用特定 channelId 过滤
+              updateMany: {
+                where: { channelId: meituanChannel.id },
+                data: { 
+                    isListed: isListed,
+                    price: skus[0]?.price || 0,
+                    externalId: String(spuSourceCode || skuCodes[0])
+                }
+              }
+            } : undefined
+          }
+        });
+
+        console.log(`🔄 已同步数据/分类 [${original_name}]: ${categories}`);
+        skippedCount++;
+        continue;
       }
 
       // 创建商品 (Product)
