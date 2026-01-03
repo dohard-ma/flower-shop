@@ -19,6 +19,40 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const ids = searchParams.get('ids');
+    const channelCode = 'wechat_mini';
+
+    const includeOptions = {
+      channels: {
+        where: {
+          channel: { code: channelCode }
+        },
+        include: {
+          channel: true
+        }
+      },
+      variants: {
+        where: { isActive: true },
+        orderBy: { price: 'asc' as const },
+        take: 1
+      }
+    };
+
+    // 统一处理格式化的函数
+    const formatProduct = (p: any) => {
+      const miniChannel = p.channels.find((c: any) => c.channel.code === channelCode);
+      let price = '0';
+      
+      if (miniChannel && Number(miniChannel.price) > 0) {
+        price = miniChannel.price.toString();
+      } else if (p.variants && p.variants.length > 0) {
+        price = p.variants[0].price.toString();
+      }
+      
+      return {
+        ...p,
+        priceRef: price
+      };
+    };
 
     // 如果提供了 ids 参数，直接通过 ID 获取产品
     if (ids) {
@@ -27,12 +61,19 @@ export async function GET(request: NextRequest) {
         where: {
           id: { in: idArray.map(id => id.trim()) },
           storeId: store.id,
-          status: 'ACTIVE'
-        }
+          status: 'ACTIVE',
+          channels: {
+            some: {
+              channel: { code: channelCode },
+              isListed: true
+            }
+          }
+        },
+        include: includeOptions
       });
 
       return ApiResponseBuilder.success(traceId, {
-        data: products,
+        data: products.map(formatProduct),
         total: products.length,
         page: 1,
         limit: products.length,
@@ -52,7 +93,13 @@ export async function GET(request: NextRequest) {
     // 这里暂时手动实现过滤以确保安全
     const where: any = {
       storeId: store.id,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      channels: {
+        some: {
+          channel: { code: channelCode },
+          isListed: true
+        }
+      }
     };
 
     // 店内分类过滤 (多对多关系)
@@ -85,13 +132,14 @@ export async function GET(request: NextRequest) {
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        orderBy: { sortOrder: 'asc' }
+        orderBy: { sortOrder: 'asc' },
+        include: includeOptions
       }),
       prisma.product.count({ where })
     ]);
 
     return ApiResponseBuilder.success(traceId, {
-      data: products,
+      data: products.map(formatProduct),
       total,
       page,
       limit: pageSize,
