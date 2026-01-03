@@ -37,16 +37,16 @@ export function StatusTabs({ activeTab, setActiveTab, total }: StatusTabsProps) 
       >
         <Tabs.List px="md">
           <Tabs.Tab value="ALL">
-             All Products <Text component="span" size="xs" c="dimmed" ml={6} fw={400} bg="gray.1" px={6} style={{ borderRadius: 10 }}>{total}</Text>
+             全部商品 <Text component="span" size="xs" c="dimmed" ml={6} fw={400} bg="gray.1" px={6} style={{ borderRadius: 10 }}>{total}</Text>
           </Tabs.Tab>
           <Tabs.Tab value="ACTIVE">
-            Selling <Text component="span" size="xs" c="dimmed" ml={6} fw={400}>142</Text>
+             出售中 <Text component="span" size="xs" c="dimmed" ml={6} fw={400}>0</Text>
           </Tabs.Tab>
           <Tabs.Tab value="SOLD_OUT">
-            Sold Out <Text component="span" size="xs" c="dimmed" ml={6} fw={400}>12</Text>
+             已售罄 <Text component="span" size="xs" c="dimmed" ml={6} fw={400}>0</Text>
           </Tabs.Tab>
           <Tabs.Tab value="INACTIVE">
-            Delisted <Text component="span" size="xs" c="dimmed" ml={6} fw={400}>34</Text>
+             已下架 <Text component="span" size="xs" c="dimmed" ml={6} fw={400}>0</Text>
           </Tabs.Tab>
         </Tabs.List>
       </Tabs>

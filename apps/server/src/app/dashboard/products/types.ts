@@ -70,6 +70,7 @@ export interface Channel {
   id: string;
   code: string;
   name: string;
+  icon?: string | null;
 }
 
 /**

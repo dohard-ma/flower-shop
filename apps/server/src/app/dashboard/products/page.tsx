@@ -285,7 +285,7 @@ export default function ProductDashboardPage() {
       {!isMobile && (
         <Flex justify='space-between' align='center' mb='md'>
           <Title order={2} size='h3'>
-            Product Management
+            商品管理
           </Title>
           <Group gap='sm'>
             <Button
@@ -296,7 +296,7 @@ export default function ProductDashboardPage() {
               onClick={() => {}}
               size='sm'
             >
-              Download All
+              导出全部
             </Button>
             <Button
               color='yellow.6'
@@ -304,7 +304,7 @@ export default function ProductDashboardPage() {
               onClick={() => router.push('/dashboard/products/new')}
               size='sm'
             >
-              Create Product
+              新建商品
             </Button>
           </Group>
         </Flex>
@@ -383,32 +383,32 @@ export default function ProductDashboardPage() {
                     </Box>
                     <Box style={{ width: '35%' }}>
                       <Text size='xs' fw={700} c='dimmed'>
-                        PRODUCT INFO
+                        商品信息
                       </Text>
                     </Box>
                     <Box style={{ width: '15%' }} px='xs'>
                       <Text size='xs' fw={700} c='dimmed' ta='center'>
-                        PRICE (¥)
+                        价格 (¥)
                       </Text>
                     </Box>
                     <Box style={{ width: '10%' }} px='xs' ta='center'>
                       <Text size='xs' fw={700} c='dimmed'>
-                        STOCK
+                        库存
                       </Text>
                     </Box>
                     <Box style={{ width: '10%' }} px='xs' ta='center'>
                       <Text size='xs' fw={700} c='dimmed'>
-                        SALES
+                        销量
                       </Text>
                     </Box>
                     <Box style={{ width: '10%' }} px='xs' ta='center'>
                       <Text size='xs' fw={700} c='dimmed'>
-                        STATUS
+                        状态
                       </Text>
                     </Box>
                     <Box style={{ width: '10%' }} px='xs' ta='right'>
                       <Text size='xs' fw={700} c='dimmed'>
-                        ACTIONS
+                        操作
                       </Text>
                     </Box>
                   </Flex>

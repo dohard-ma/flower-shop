@@ -1,4 +1,4 @@
-import { Box, Flex, Stack, Text, Group, Button, Image, Badge, UnstyledButton, rem, Checkbox } from '@mantine/core';
+import { Box, Flex, Stack, Text, Group, Button, Image as MantineImage, Badge, UnstyledButton, rem, Checkbox } from '@mantine/core';
 import { IconPhoto, IconPencil, IconDots } from '@tabler/icons-react';
 import { VariantsPopover } from './VariantsPopover';
 import { Product } from '../types';
@@ -30,7 +30,7 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
         <Flex gap="sm">
           <Box pos="relative" w={80} h={80} style={{ flexShrink: 0 }}>
             {mainImage ? (
-              <Image src={mainImage} radius="sm" w={80} h={80} fit="cover" alt={product.name} />
+              <MantineImage src={mainImage} radius="sm" w={80} h={80} fit="cover" alt={product.name} />
             ) : (
               <Box w={80} h={80} bg="gray.1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: rem(4) }}>
                 <IconPhoto size={24} color="#ddd" />
@@ -48,7 +48,7 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
             </Group>
 
             <Group gap="xs" mt={2}>
-              <Text size="xs" c="dimmed">Stock {totalStock}</Text>
+              <Text size="xs" c="dimmed">库存 {totalStock}</Text>
               <Text size="xs" c="red.7" fw={700}>¥{priceDisplay}</Text>
             </Group>
 
@@ -63,7 +63,7 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
                 style={{ borderColor: '#eee' }}
                 onClick={() => onEdit(product.id)}
               >
-                Edit
+                编辑
               </Button>
             </Group>
           </Stack>
@@ -80,7 +80,7 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
         <Flex gap="md" style={{ width: '35%', overflow: 'hidden' }} align="center">
           <Box pos="relative" w={56} h={56} style={{ flexShrink: 0 }}>
             {mainImage ? (
-              <Image src={mainImage} radius="sm" w={56} h={56} fit="cover" alt={product.name} />
+              <MantineImage src={mainImage} radius="sm" w={56} h={56} fit="cover" alt={product.name} />
             ) : (
               <Box w={56} h={56} bg="gray.0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: rem(4) }}>
                 <IconPhoto size={20} color="#dee2e6" />
@@ -91,8 +91,21 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
             <Text size="sm" fw={600} lineClamp={1} style={{ cursor: 'pointer', color: '#212529' }} onClick={() => onEdit(product.id)}>
               {product.name}
             </Text>
-            <Text size="xs" c="dimmed">SPU: {product.displayId}</Text>
-            <Text size="xs" c="dimmed">Barcode: 69201029384</Text>
+            <Group gap={6} wrap="nowrap">
+                <Text size="xs" c="dimmed">SPU: {product.displayId}</Text>
+                <Group gap={4}>
+                    {product.channels?.filter(c => c.isListed).map((pc) => (
+                        <Box key={pc.channel.id} title={pc.channel.name}>
+                            {pc.channel.icon ? (
+                                <MantineImage src={pc.channel.icon} w={14} h={14} radius="xs" />
+                            ) : (
+                                <Box w={14} h={14} bg="gray.1" style={{ borderRadius: 2 }} />
+                            )}
+                        </Box>
+                    ))}
+                </Group>
+            </Group>
+            <Text size="xs" c="dimmed">条码: 69201029384</Text>
           </Stack>
         </Flex>
 
@@ -115,7 +128,7 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
             size="sm"
             styles={{ root: { textTransform: 'none' } }}
           >
-            {product.status === 'ACTIVE' ? 'Selling' : 'Delisted'}
+            {product.status === 'ACTIVE' ? '出售中' : '已下架'}
           </Badge>
         </Box>
 

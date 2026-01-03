@@ -40,13 +40,14 @@ export function CategorySidebar({ categories, activeMenuId, summaryCounts, onCat
           p={isMobile ? "sm" : "md"}
           style={{
             backgroundColor: activeMenuId === 'all' ? '#fff' : 'transparent',
-            borderBottom: '1px solid #f5f5f5'
+            borderBottom: '1px solid #f5f5f5',
+            borderLeft: activeMenuId === 'all' ? `${rem(2)} solid var(--mantine-color-yellow-6)` : '2px solid transparent',
           }}
           onClick={() => onCategoryClick('all')}
         >
           <Stack gap={0} align={isMobile ? "flex-start" : "flex-start"}>
-            <Text size="sm" fw={activeMenuId === 'all' ? 700 : 400} c={activeMenuId === 'all' ? 'yellow.8' : 'dimmed'}>
-                All Products
+            <Text size="sm" fw={activeMenuId === 'all' ? 600 : 400} c={activeMenuId === 'all' ? 'black' : 'gray.7'}>
+                全部商品
             </Text>
             {!isMobile && <Text size="10px" c="dimmed">{summaryCounts.all}</Text>}
           </Stack>
@@ -92,14 +93,15 @@ export function CategorySidebar({ categories, activeMenuId, summaryCounts, onCat
                 p="xs"
                 style={{
                     borderRadius: rem(8),
-                    backgroundColor: activeMenuId === 'uncategorized' ? 'var(--mantine-color-gray-0)' : 'transparent',
+                    backgroundColor: activeMenuId === 'uncategorized' ? '#fff' : 'transparent',
+                    borderLeft: activeMenuId === 'uncategorized' ? `${rem(2)} solid var(--mantine-color-yellow-6)` : '2px solid transparent',
                 }}
                 onClick={() => onCategoryClick('uncategorized')}
             >
                 <Group gap={8} justify={isMobile ? "flex-start" : "flex-start"} wrap="nowrap">
-                    <IconInfoCircle size={16} color="var(--mantine-color-gray-5)" style={{ flexShrink: 0 }} />
-                    <Text size="xs" fw={activeMenuId === 'uncategorized' ? 600 : 400} c="gray.7" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                        Uncategorized
+                    <IconInfoCircle size={16} color={activeMenuId === 'uncategorized' ? 'var(--mantine-color-yellow-6)' : 'var(--mantine-color-gray-5)'} style={{ flexShrink: 0 }} />
+                    <Text size="xs" fw={activeMenuId === 'uncategorized' ? 600 : 400} c={activeMenuId === 'uncategorized' ? 'black' : 'gray.7'} style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                        未分类
                     </Text>
                     {!isMobile && <Text size="10px" c="dimmed" ml="auto">{summaryCounts.uncategorized}</Text>}
                 </Group>
