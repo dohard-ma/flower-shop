@@ -31,12 +31,15 @@ export interface ProductChannel {
  */
 export interface ProductVariant {
   id: string;
+  productId: string;
   name: string;
   stock: number;
   price: number;
   costPrice: number;
   storeCode: string | null;
-  channelData: any;
+  channelData?: any;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 /**
@@ -46,12 +49,18 @@ export interface Product {
   id: string;
   displayId: string;    // 展示 ID (如 SPU 编码)
   name: string;         // 商品标题
+  description?: string | null;
   images: string[];     // 图片数组
-  priceRef: string;     // 参考价格
   status: 'ACTIVE' | 'INACTIVE'; // 状态：售卖中/下架
+  mainFlower?: string | null;
+  colorSeries?: string | null;
+  materials?: any;
+  styleId?: string | null;
+  style?: { id: string; name: string } | null;
   variants: ProductVariant[];    // 关联规格
   channels: ProductChannel[];    // 销售渠道数据
   categories?: { category: StoreCategory }[]; // 关联分类
+  sortOrder: number;
 }
 
 /**

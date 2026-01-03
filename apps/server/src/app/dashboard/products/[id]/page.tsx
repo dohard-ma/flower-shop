@@ -23,8 +23,9 @@ import {
   LoadingOverlay,
   Box,
   MultiSelect,
+  Table,
 } from '@mantine/core';
-import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
+import { IconArrowLeft, IconDeviceFloppy, IconX } from '@tabler/icons-react';
 import { http } from '@/lib/request';
 import { notifications } from '@mantine/notifications';
 import { ImageUpload } from '@/components/image-upload';
@@ -40,13 +41,15 @@ export interface Product {
   name: string;
   images: string[];
   videos?: string[];
-  priceRef: string;
   materials: any;
   status: string;
-  description?: string;
+  description?: string | null;
+  mainFlower?: string | null;
+  colorSeries?: string | null;
   sortOrder: number;
   categories: { category: StoreCategory }[];
   styleId?: string | null;
+  variants?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -54,27 +57,31 @@ export interface Product {
 interface ProductFormData {
   name: string;
   description: string;
-  categoryIds: string[]; // 修改为数组以支持多选
-  priceRef: string;
+  categoryIds: string[];
   status: string;
   images: string[];
   videos: string[];
   materials: any;
   styleId: string | null;
   sortOrder: number;
+  mainFlower: string;
+  colorSeries: string;
+  variants: any[];
 }
 
 const initialFormData: ProductFormData = {
   name: "",
   description: "",
   categoryIds: [],
-  priceRef: "",
   status: "ACTIVE",
   images: [],
   videos: [],
   materials: [],
   styleId: null,
   sortOrder: 0,
+  mainFlower: "",
+  colorSeries: "",
+  variants: [],
 };
 
 export default function ProductEditPage() {
@@ -84,6 +91,7 @@ export default function ProductEditPage() {
 
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
   const [availableCategories, setAvailableCategories] = useState<{ value: string; label: string }[]>([]);
+  const [availableStyles, setAvailableStyles] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -101,6 +109,20 @@ export default function ProductEditPage() {
     }
   }, []);
 
+  const fetchStyles = useCallback(async () => {
+    try {
+      const res = await http.get<any[]>('/api/admin/products/styles');
+      if (res.success && Array.isArray(res.data)) {
+        setAvailableStyles(res.data.map(s => ({
+          value: s.id,
+          label: s.name
+        })));
+      }
+    } catch (e) {
+      console.error('Failed to fetch styles');
+    }
+  }, []);
+
   const fetchProduct = useCallback(async (id: string) => {
     setInitialLoading(true);
     try {
@@ -111,13 +133,15 @@ export default function ProductEditPage() {
           name: product.name,
           description: product.description || "",
           categoryIds: product.categories?.map(c => c.category.id) || [],
-          priceRef: String(product.priceRef || ""),
           status: product.status,
           images: product.images || [],
           videos: product.videos || [],
           materials: product.materials || [],
+          mainFlower: product.mainFlower || "",
+          colorSeries: product.colorSeries || "",
           styleId: product.styleId || null,
           sortOrder: product.sortOrder,
+          variants: product.variants || [],
         });
       }
     } catch (error: any) {
@@ -134,7 +158,7 @@ export default function ProductEditPage() {
 
   useEffect(() => {
     const init = async () => {
-      await fetchCategories();
+      await Promise.all([fetchCategories(), fetchStyles()]);
       if (!isNew && params.id) {
         await fetchProduct(params.id as string);
       } else {
@@ -142,7 +166,7 @@ export default function ProductEditPage() {
       }
     };
     init();
-  }, [isNew, params.id, fetchCategories, fetchProduct]);
+  }, [isNew, params.id, fetchCategories, fetchStyles, fetchProduct]);
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -268,24 +292,37 @@ export default function ProductEditPage() {
                     onChange={(e) => handleInputChange('name', e.currentTarget.value)}
                   />
                   <Group grow align="flex-start">
-                    <MultiSelect
-                      label="分类"
-                      placeholder="请选择分类 (支持多选)"
-                      data={availableCategories}
-                      value={formData.categoryIds}
-                      onChange={(val) => handleInputChange('categoryIds', val)}
-                      searchable
+                    <Select
+                      label="款式"
+                      placeholder="请选择物理款式"
+                      data={availableStyles}
+                      value={formData.styleId}
+                      onChange={(val) => handleInputChange('styleId', val)}
                       clearable
-                      required
                     />
                     <TextInput
-                      label="价格"
-                      placeholder="例如：¥299 或 见详情"
-                      required
-                      value={formData.priceRef}
-                      onChange={(e) => handleInputChange('priceRef', e.currentTarget.value)}
+                      label="主花材"
+                      placeholder="例如：碎冰蓝玫瑰"
+                      value={formData.mainFlower}
+                      onChange={(e) => handleInputChange('mainFlower', e.currentTarget.value)}
+                    />
+                    <TextInput
+                      label="色系"
+                      placeholder="例如：蓝色"
+                      value={formData.colorSeries}
+                      onChange={(e) => handleInputChange('colorSeries', e.currentTarget.value)}
                     />
                   </Group>
+                  <MultiSelect
+                    label="列表展示分类"
+                    placeholder="请选择分类 (支持多选)"
+                    data={availableCategories}
+                    value={formData.categoryIds}
+                    onChange={(val) => handleInputChange('categoryIds', val)}
+                    searchable
+                    clearable
+                    required
+                  />
                   <Textarea
                     label="描述"
                     placeholder="请输入商品详情介绍"
@@ -304,6 +341,127 @@ export default function ProductEditPage() {
                   onChange={handleUpdateImages}
                   maxFiles={9}
                 />
+              </section>
+
+              <section>
+                <Group justify="space-between" mb="md">
+                  <Title order={4}>规格信息 (SKU)</Title>
+                  <Button size="xs" variant="light" onClick={() => {
+                    const nextSortOrder = formData.variants.length > 0
+                      ? Math.max(...formData.variants.map(v => v.sortOrder || 0)) + 1
+                      : 0;
+                    setFormData(prev => ({
+                      ...prev,
+                      variants: [...prev.variants, {
+                        name: "",
+                        price: 0,
+                        costPrice: 0,
+                        stock: 99,
+                        storeCode: "",
+                        sortOrder: nextSortOrder,
+                        isActive: true
+                      }]
+                    }));
+                  }}>新增规格</Button>
+                </Group>
+                <Divider mb="lg" />
+                <Box style={{ overflowX: 'auto' }}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th style={{ width: rem(150) }}>规格名称</Table.Th>
+                        <Table.Th style={{ width: rem(100) }}>零售价</Table.Th>
+                        <Table.Th style={{ width: rem(100) }}>成本价</Table.Th>
+                        <Table.Th style={{ width: rem(100) }}>库存</Table.Th>
+                        <Table.Th>店内码/条码</Table.Th>
+                        <Table.Th style={{ width: rem(80) }}>操作</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {formData.variants.map((variant, index) => (
+                        <Table.Tr key={index}>
+                          <Table.Td>
+                            <TextInput
+                              size="xs"
+                              placeholder="如：19枝/21枝"
+                              value={variant.name}
+                              onChange={(e) => {
+                                const newVariants = [...formData.variants];
+                                newVariants[index].name = e.currentTarget.value;
+                                handleInputChange('variants', newVariants);
+                              }}
+                            />
+                          </Table.Td>
+                          <Table.Td>
+                            <NumberInput
+                              size="xs"
+                              placeholder="0.00"
+                              hideControls
+                              decimalScale={2}
+                              value={variant.price}
+                              onChange={(val) => {
+                                const newVariants = [...formData.variants];
+                                newVariants[index].price = val;
+                                handleInputChange('variants', newVariants);
+                              }}
+                            />
+                          </Table.Td>
+                          <Table.Td>
+                            <NumberInput
+                              size="xs"
+                              placeholder="0.00"
+                              hideControls
+                              decimalScale={2}
+                              value={variant.costPrice}
+                              onChange={(val) => {
+                                const newVariants = [...formData.variants];
+                                newVariants[index].costPrice = val;
+                                handleInputChange('variants', newVariants);
+                              }}
+                            />
+                          </Table.Td>
+                          <Table.Td>
+                            <NumberInput
+                              size="xs"
+                              placeholder="99"
+                              value={variant.stock}
+                              onChange={(val) => {
+                                const newVariants = [...formData.variants];
+                                newVariants[index].stock = val;
+                                handleInputChange('variants', newVariants);
+                              }}
+                            />
+                          </Table.Td>
+                          <Table.Td>
+                            <TextInput
+                              size="xs"
+                              placeholder="扫码或输入"
+                              value={variant.storeCode}
+                              onChange={(e) => {
+                                const newVariants = [...formData.variants];
+                                newVariants[index].storeCode = e.currentTarget.value;
+                                handleInputChange('variants', newVariants);
+                              }}
+                            />
+                          </Table.Td>
+                          <Table.Td>
+                            <ActionIcon color="red" variant="subtle" onClick={() => {
+                              const newVariants = formData.variants.filter((_, i) => i !== index);
+                              handleInputChange('variants', newVariants);
+                            }}>
+                              <IconX size={16} />
+                            </ActionIcon>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                  {formData.variants.length === 0 && (
+                    <Text ta="center" size="sm" c="dimmed" py="xl" fs="italic">
+                      暂无规格信息，点击上方按钮添加
+                    </Text>
+                  )}
+                </Box>
               </section>
 
               <section>

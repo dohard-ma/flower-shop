@@ -112,6 +112,7 @@ model ProductStyle {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  @@unique([storeId, name])
   @@map("product_styles") 
 }
 

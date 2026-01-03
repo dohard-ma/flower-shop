@@ -89,10 +89,15 @@ async function main() {
       // 1. 获取或创建款式 (ProductStyle)
       let styleId: string | undefined;
       if (style) {
-        const styles = await prisma.productStyle.findMany({ where: { storeId: store.id, name: style } });
-        let styleObj = styles[0];
+        const styleName = style.trim();
+        // 使用 findFirst 避免 storeId_name 类型错误（在重新生成 Client 之前）
+        let styleObj = await prisma.productStyle.findFirst({
+            where: { storeId: store.id, name: styleName }
+        });
         if (!styleObj) {
-            styleObj = await prisma.productStyle.create({ data: { storeId: store.id, name: style } });
+            styleObj = await prisma.productStyle.create({
+                data: { storeId: store.id, name: styleName }
+            });
         }
         styleId = styleObj.id;
       }

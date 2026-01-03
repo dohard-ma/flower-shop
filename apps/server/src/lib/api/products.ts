@@ -147,16 +147,18 @@ export async function createProduct(data: {
   storeId: string;
   displayId: string;
   name: string;
-  styleId?: string;
-  priceRef: string;
-  description?: string;
+  styleId?: string | null;
+  description?: string | null;
   images: any;
   materials: any;
   status: string;
   sortOrder: number;
   categoryIds?: string[];
+  mainFlower?: string | null;
+  colorSeries?: string | null;
+  variants?: any[];
 }) {
-  const { categoryIds, ...rest } = data;
+  const { categoryIds, variants, ...rest } = data;
   try {
     const product = await prisma.product.create({
       data: {
@@ -165,6 +167,12 @@ export async function createProduct(data: {
           create: categoryIds.map(id => ({
             categoryId: id
           }))
+        } : undefined,
+        variants: variants ? {
+          create: variants.map(v => {
+            const { id, productId, ...vData } = v;
+            return vData;
+          })
         } : undefined
       }
     });
@@ -179,17 +187,19 @@ export async function updateProduct(
   id: string,
   data: {
     name?: string;
-    styleId?: string;
-    priceRef?: string;
-    description?: string;
+    styleId?: string | null;
+    description?: string | null;
     images?: any;
     materials?: any;
     status?: string;
     sortOrder?: number;
     categoryIds?: string[];
+    mainFlower?: string | null;
+    colorSeries?: string | null;
+    variants?: any[];
   }
 ) {
-  const { categoryIds, ...rest } = data;
+  const { categoryIds, variants, ...rest } = data;
   try {
     const product = await prisma.product.update({
       where: { id },
@@ -200,6 +210,13 @@ export async function updateProduct(
           create: categoryIds.map(cid => ({
             categoryId: cid
           }))
+        } : undefined,
+        variants: variants ? {
+          deleteMany: {},
+          create: variants.map(v => {
+            const { id: vId, productId, ...vData } = v;
+            return vData;
+          })
         } : undefined
       }
     });

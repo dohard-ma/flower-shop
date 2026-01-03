@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Group, Text, Image, SimpleGrid, Card, ActionIcon, Modal, rem, Box, Center } from '@mantine/core';
+import { Group, Text, Image, SimpleGrid, Card, ActionIcon, Modal, rem, Box, Center, Stack } from '@mantine/core';
 import { Dropzone, IMAGE_MIME_TYPE, FileWithPath } from '@mantine/dropzone';
 import { IconUpload, IconX, IconEye, IconPhoto } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';

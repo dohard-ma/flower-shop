@@ -49,14 +49,16 @@ export async function GET(request: NextRequest) {
 
 const productSchema = z.object({
   name: z.string().min(1, { message: '商品名称不能为空' }),
-  styleId: z.string().optional(),
-  priceRef: z.string().min(1, { message: '参考价格不能为空' }),
-  description: z.string().optional(),
+  styleId: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   images: z.any(),
   materials: z.any().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
   sortOrder: z.number().int().min(0).default(0),
   categoryIds: z.array(z.string()).optional(),
+  mainFlower: z.string().optional().nullable(),
+  colorSeries: z.string().optional().nullable(),
+  variants: z.array(z.any()).optional(),
 });
 
 // POST: Handles product creation
