@@ -35,7 +35,7 @@ Component({
     async fetchCategories() {
       this.setData({ loading: true });
       try {
-        const res = await categoryApi.getPublicList();
+        const res = await categoryApi.getPublicList({ channelCode: 'wechat_mini' });
         if (res.success) {
           const categories = this.buildCategoryTree(res.data);
           this.setData({

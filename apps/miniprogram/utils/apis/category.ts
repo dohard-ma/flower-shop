@@ -20,9 +20,12 @@ export const categoryApi = {
   },
 
   // 获取公开可见的分类 (浏览用)
-  getPublicList() {
+  getPublicList(params?: { channelCode?: string }) {
+    const queryParams = params?.channelCode 
+      ? `?channelCode=${params.channelCode}` 
+      : '';
     return request<Category[]>({
-      url: '/public/categories',
+      url: `/public/categories${queryParams}`,
       method: 'GET'
     });
   },

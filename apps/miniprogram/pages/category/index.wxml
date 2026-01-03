@@ -14,7 +14,7 @@
             style="top: 50%; left: 8rpx; transform: translateY(-50%); width: 6rpx; height: 40rpx; border-radius: 0 4rpx 4rpx 0;"
           ></view>
 
-          <view class="{{ item.level === 0 ? (item.id === activeSidebarValue ? 'text-base font-bold text-main' : 'text-base font-bold text-sub') : (item.id === activeSidebarValue ? 'text-sm font-bold text-main pl-30 relative child-active-line' : 'text-sm text-placeholder pl-30') }}">
+          <view class="{{ item.level === 0 ? (item.id === activeSidebarValue ? 'text-base text-main' : 'text-base text-sub') : (item.id === activeSidebarValue ? 'text-sm text-main pl-30 relative child-active-line' : 'text-sm text-placeholder pl-30') }}">
             {{item.label}}
           </view>
         </view>
