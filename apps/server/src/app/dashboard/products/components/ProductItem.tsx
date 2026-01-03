@@ -11,9 +11,16 @@ interface ProductItemProps {
   product: Product;           // 商品详细数据
   onEdit: (id: string) => void; // 点击编辑按钮的回调
   isMobile: boolean;          // 是否移动端显示
+  selected?: boolean;         // 是否选中
+  onSelect?: (selected: boolean) => void; // 选中状态改变回调
+  onUpdate?: (updatedProduct: Product) => void; // 更新成功后的回调
 }
 
-export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
+import { EditableTitle } from './EditableTitle';
+import { http } from '@/lib/request';
+import { notifications } from '@mantine/notifications';
+
+export function ProductItem({ product, onEdit, isMobile, selected, onSelect, onUpdate }: ProductItemProps) {
   const images = Array.isArray(product.images) ? product.images : [];
   const mainImage = images[0];
   const variantsCount = product.variants?.length || 0;
@@ -75,7 +82,13 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
   return (
     <Box py="sm" style={{ borderBottom: `${rem(1)} solid #f1f3f5` }}>
       <Flex align="center">
-        <Box style={{ width: 40 }}><Checkbox size="xs" /></Box>
+        <Box style={{ width: 40 }}>
+          <Checkbox 
+            size="xs" 
+            checked={selected}
+            onChange={(e) => onSelect?.(e.currentTarget.checked)}
+          />
+        </Box>
         
         <Flex gap="md" style={{ width: '35%', overflow: 'hidden' }} align="center">
           <Box pos="relative" w={56} h={56} style={{ flexShrink: 0 }}>
@@ -87,10 +100,28 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
               </Box>
             )}
           </Box>
-          <Stack gap={0} justify="center" style={{ overflow: 'hidden' }}>
-            <Text size="sm" fw={600} lineClamp={1} style={{ cursor: 'pointer', color: '#212529' }} onClick={() => onEdit(product.id)}>
-              {product.name}
-            </Text>
+          <Stack gap={0} justify="center" style={{ overflow: 'hidden', flex: 1 }}>
+            <EditableTitle 
+              value={product.name}
+              onSave={async (newTitle) => {
+                try {
+                  const res = await http.put(`/api/admin/products?id=${product.id}`, { name: newTitle });
+                  notifications.show({
+                    title: '更新成功',
+                    message: '商品标题已修改',
+                    color: 'green',
+                  });
+                  onUpdate?.({ ...product, name: newTitle });
+                } catch (e) {
+                  notifications.show({
+                    title: '更新失败',
+                    message: '请稍后重试',
+                    color: 'red',
+                  });
+                  throw e;
+                }
+              }}
+            />
             <Group gap={6} wrap="nowrap">
                 <Text size="xs" c="dimmed">SPU: {product.displayId}</Text>
                 <Group gap={4}>

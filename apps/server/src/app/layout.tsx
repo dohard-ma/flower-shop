@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 import { SettingsProvider } from "@/contexts/settings-context";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
+import { ModalsProvider } from "@mantine/modals";
 import { theme } from "@/theme";
 import type React from "react";
 
@@ -33,9 +34,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <MantineProvider theme={theme}>
           <Notifications />
-          <SettingsProvider>
-            {children}
-          </SettingsProvider>
+          <ModalsProvider>
+            <SettingsProvider>
+              {children}
+            </SettingsProvider>
+          </ModalsProvider>
         </MantineProvider>
       </body>
     </html>

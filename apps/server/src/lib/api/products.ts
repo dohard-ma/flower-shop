@@ -250,3 +250,54 @@ export async function updateProductStatus(id: string, status: string) {
     throw error;
   }
 }
+
+// 批量更新商品状态
+export async function batchUpdateStatus(ids: string[], status: string) {
+  try {
+    return await prisma.product.updateMany({
+      where: { id: { in: ids } },
+      data: { status }
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+
+// 批量更新商品分类
+export async function batchUpdateCategories(productIds: string[], categoryIds: string[]) {
+  try {
+    // 事务处理：先删除旧关联，再创建新关联
+    return await prisma.$transaction(async (tx) => {
+      // 删除所选商品的所有分类关联
+      await tx.categoryOnProduct.deleteMany({
+        where: { productId: { in: productIds } }
+      });
+
+      // 为每个商品创建新的分类关联
+      const createData = productIds.flatMap(pid => 
+        categoryIds.map(cid => ({
+          productId: pid,
+          categoryId: cid
+        }))
+      );
+
+      return await tx.categoryOnProduct.createMany({
+        data: createData
+      });
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+
+// 更新商品名称（用于行内编辑）
+export async function updateProductName(id: string, name: string) {
+  try {
+    return await prisma.product.update({
+      where: { id },
+      data: { name }
+    });
+  } catch (error) {
+    throw error;
+  }
+}

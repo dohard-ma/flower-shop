@@ -15,10 +15,16 @@ import {
   Button,
   Title,
   Group,
-  Checkbox
+  Checkbox,
+  Alert,
+  Menu,
+  ActionIcon,
+  Collapse
 } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
-import { IconSearch, IconPlus, IconDownload } from '@tabler/icons-react';
+import { useMediaQuery, useDisclosure } from '@mantine/hooks';
+import { IconSearch, IconPlus, IconDownload, IconSettings, IconChevronDown, IconTrash, IconArrowUp, IconArrowDown, IconTag, IconAlertCircle, IconCurrencyDollar } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { modals } from '@mantine/modals';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 import { http } from '@/lib/request';
@@ -26,6 +32,7 @@ import { ProductItem } from './components/ProductItem';
 import { CategorySidebar } from './components/CategorySidebar';
 import { StatusTabs } from './components/StatusTabs';
 import { ProductFilterBar } from './components/ProductFilterBar';
+import { BatchChannelPriceModal } from './components/BatchChannelPriceModal';
 import {
   Product,
   StoreCategory,
@@ -69,11 +76,84 @@ export default function ProductDashboardPage() {
   const [page, setPage] = useState(initialPage);
   const pageSize = 20;
 
-  // 侧边栏及顶部 Tab 统计数据
   const [summaryCounts, setSummaryCounts] = useState<SummaryCounts>({
     all: 0,
     uncategorized: 0
   });
+
+  // --- 批量选择相关状态 ---
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isAllSelectedAcrossPages, setIsAllSelectedAcrossPages] = useState(false);
+  const [isBatchApplying, setIsBatchApplying] = useState(false);
+  const [channelPriceModalOpen, setChannelPriceModalOpen] = useState(false);
+
+  // 当筛选条件改变时，清除选中状态
+  useEffect(() => {
+    setSelectedIds([]);
+    setIsAllSelectedAcrossPages(false);
+  }, [activeTab, search, activeMenuId, selectedChannels]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(products.map(p => p.id));
+      setIsAllSelectedAcrossPages(true);
+    } else {
+      setSelectedIds([]);
+      setIsAllSelectedAcrossPages(false);
+    }
+  };
+
+  const handleBatchAction = (action: 'status' | 'category', value: any) => {
+    const count = isAllSelectedAcrossPages ? total : selectedIds.length;
+    let actionLabel = '';
+    
+    if (action === 'status') {
+      actionLabel = value === 'ACTIVE' ? '批量上架' : '批量下架';
+    } else {
+      const cat = categories.find(c => c.id === value[0]);
+      actionLabel = `设置为分类: ${cat?.name || '未知'}`;
+    }
+
+    modals.openConfirmModal({
+      title: '批量操作确认',
+      centered: true,
+      children: (
+        <Text size="sm">
+          您确定要对所选的 <Text span fw={700} c="yellow.7">{count}</Text> 个商品执行 <Text span fw={700}>{actionLabel}</Text> 吗？
+        </Text>
+      ),
+      labels: { confirm: '确认执行', cancel: '取消' },
+      confirmProps: { color: 'yellow.6' },
+      onConfirm: async () => {
+        setIsBatchApplying(true);
+        try {
+          await http.post('/api/admin/products/batch', {
+            ids: selectedIds, // 这里暂时传 ID，如果后端支持全选结果，则可以改造
+            action,
+            value
+          });
+
+          notifications.show({
+            title: '操作成功',
+            message: `已完成 ${count} 个商品的批量处理`,
+            color: 'green'
+          });
+          
+          fetchProducts(true);
+          setSelectedIds([]);
+          setIsAllSelectedAcrossPages(false);
+        } catch (e) {
+          notifications.show({
+            title: '操作失败',
+            message: '系统繁忙，请稍后重试',
+            color: 'red'
+          });
+        } finally {
+          setIsBatchApplying(false);
+        }
+      },
+    });
+  };
 
   // 同步状态到 URL
   useEffect(() => {
@@ -369,6 +449,100 @@ export default function ProductDashboardPage() {
                 total={total}
               />
 
+              {/* 批量操作工具栏 */}
+              <Collapse in={selectedIds.length > 0}>
+                <Box px="md" py="sm" bg="gray.0" style={{ borderBottom: '1px solid #eee' }}>
+                  <Flex justify="space-between" align="center">
+                    <Group gap="md">
+                      <Flex align="center" gap={4}>
+                        <IconAlertCircle size={18} color="var(--mantine-color-blue-6)" />
+                        <Text size="sm" fw={600}>
+                          已选择 {isAllSelectedAcrossPages ? total : selectedIds.length} 个商品
+                        </Text>
+                      </Flex>
+                      {!isAllSelectedAcrossPages && selectedIds.length < total && (
+                         <Button 
+                            variant="subtle" 
+                            size="xs" 
+                            onClick={() => setIsAllSelectedAcrossPages(true)}
+                            c="blue.7"
+                          >
+                            改为选择全部检索结果({total})
+                          </Button>
+                      )}
+                      <Button variant="subtle" size="xs" color="gray" onClick={() => handleSelectAll(false)}>
+                        取消选择
+                      </Button>
+                    </Group>
+                    
+                    <Group gap="sm">
+                      <Button 
+                        size="sm" 
+                        variant="filled" 
+                        color="green.7"
+                        leftSection={<IconArrowUp size={16} />}
+                        onClick={() => handleBatchAction('status', 'ACTIVE')}
+                        loading={isBatchApplying}
+                        style={{ boxShadow: '0 2px 4px rgba(47, 158, 68, 0.2)' }}
+                      >
+                        批量上架
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="filled" 
+                        color="gray.7"
+                        leftSection={<IconArrowDown size={16} />}
+                        onClick={() => handleBatchAction('status', 'INACTIVE')}
+                        loading={isBatchApplying}
+                        style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
+                      >
+                        批量下架
+                      </Button>
+                      <Box style={{ width: 1, height: 24, background: '#eee', margin: '0 4px' }} />
+                      <Menu position="bottom-end" shadow="md" width={200}>
+                        <Menu.Target>
+                          <Button 
+                            size="sm" 
+                            variant="filled" 
+                            color="yellow.6"
+                            leftSection={<IconTag size={16} />}
+                            rightSection={<IconChevronDown size={16} />}
+                            loading={isBatchApplying}
+                            style={{ boxShadow: '0 2px 4px rgba(250, 176, 5, 0.2)' }}
+                          >
+                            设置分类
+                          </Button>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Label>应用所选分类到商品</Menu.Label>
+                          <ScrollArea.Autosize mah={300}>
+                            {categories.map(cat => (
+                              <Menu.Item 
+                                key={cat.id} 
+                                onClick={() => handleBatchAction('category', [cat.id])}
+                                leftSection={<IconTag size={14} />}
+                              >
+                                {cat.name}
+                              </Menu.Item>
+                            ))}
+                          </ScrollArea.Autosize>
+                        </Menu.Dropdown>
+                      </Menu>
+                      <Button 
+                        size="sm" 
+                        variant="filled" 
+                        color="orange.6"
+                        leftSection={<IconCurrencyDollar size={16} />}
+                        onClick={() => setChannelPriceModalOpen(true)}
+                        style={{ boxShadow: '0 2px 4px rgba(255, 140, 0, 0.2)' }}
+                      >
+                        渠道定价
+                      </Button>
+                    </Group>
+                  </Flex>
+                </Box>
+              </Collapse>
+
               {/* 表头 - 仅桌面端 */}
               {!isMobile && (
                 <Box
@@ -379,7 +553,12 @@ export default function ProductDashboardPage() {
                 >
                   <Flex align='center'>
                     <Box style={{ width: 40 }}>
-                      <Checkbox size='xs' />
+                      <Checkbox 
+                        size='xs' 
+                        checked={selectedIds.length > 0 && selectedIds.length === products.length}
+                        indeterminate={selectedIds.length > 0 && selectedIds.length < products.length}
+                        onChange={(e) => handleSelectAll(e.currentTarget.checked)}
+                      />
                     </Box>
                     <Box style={{ width: '35%' }}>
                       <Text size='xs' fw={700} c='dimmed'>
@@ -462,6 +641,18 @@ export default function ProductDashboardPage() {
                           router.push(`/dashboard/products/${id}`)
                         }
                         isMobile={!!isMobile}
+                        selected={isAllSelectedAcrossPages || selectedIds.includes(p.id)}
+                        onSelect={(checked) => {
+                          if (checked) {
+                            setSelectedIds(prev => [...prev, p.id]);
+                          } else {
+                            setSelectedIds(prev => prev.filter(id => id !== p.id));
+                            setIsAllSelectedAcrossPages(false);
+                          }
+                        }}
+                        onUpdate={(updatedProduct) => {
+                          setProducts(prev => prev.map(item => item.id === updatedProduct.id ? updatedProduct : item));
+                        }}
                       />
                     ))}
                   </Stack>
@@ -488,6 +679,20 @@ export default function ProductDashboardPage() {
           />
         )}
       </Flex>
+
+      {/* 批量渠道价格弹窗 */}
+      <BatchChannelPriceModal
+        opened={channelPriceModalOpen}
+        onClose={() => setChannelPriceModalOpen(false)}
+        products={products.filter(p => selectedIds.includes(p.id))}
+        channels={channels}
+        onSuccess={() => {
+          fetchProducts(true);
+          setSelectedIds([]);
+          setIsAllSelectedAcrossPages(false);
+        }}
+      />
     </Flex>
   );
 }
+
