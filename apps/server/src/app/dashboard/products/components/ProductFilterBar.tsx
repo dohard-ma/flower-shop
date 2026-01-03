@@ -30,46 +30,72 @@ export function ProductFilterBar({
   onManageCategories,
 }: ProductFilterBarProps) {
   
-  const ActionButtons = (
-    <Group gap="xs" grow={isMobile}>
-      {isMobile ? (
-         <Flex direction="row" justify="space-between" w="100%" px="xs" py="xs" bg="white">
-            <UnstyledButton onClick={onManageCategories}>
-                <Stack gap={2} align="center">
-                    <IconCategory size={20} stroke={1.5} />
-                    <Text size="xs" fw={500}>分类管理</Text>
-                </Stack>
-            </UnstyledButton>
-            <UnstyledButton>
-                <Stack gap={2} align="center">
-                    <IconArrowsSort size={20} stroke={1.5} />
-                    <Text size="xs" fw={500}>商品排序</Text>
-                </Stack>
-            </UnstyledButton>
-            <UnstyledButton>
-                <Stack gap={2} align="center">
-                    <IconListCheck size={20} stroke={1.5} />
-                    <Text size="xs" fw={500}>批量操作</Text>
-                </Stack>
-            </UnstyledButton>
-            <Button
-                leftSection={<IconPlus size={18} />}
-                radius="xl"
-                color="yellow.6"
-                size="sm"
-                onClick={onNew}
-            >
-                商品新建
+  const DesktopFilter = (
+    <Stack gap="xs" p="md" bg="white">
+      <Flex gap="xl" align="flex-end">
+        <Box style={{ flex: 1 }}>
+          <Text size="xs" fw={500} mb={4} c="gray.7">Search Keyword</Text>
+          <TextInput
+            placeholder="Name, SPU, Barcode"
+            leftSection={<IconSearch size={16} color="var(--mantine-color-gray-5)" />}
+            value={search}
+            onChange={(e) => onSearchChange(e.currentTarget.value)}
+            radius="xs"
+            styles={{ input: { backgroundColor: '#fff', border: '1px solid #dee2e6' } }}
+          />
+        </Box>
+
+        <Box style={{ width: 180 }}>
+          <Text size="xs" fw={500} mb={4} c="gray.7">Inventory Status</Text>
+          <Select
+            placeholder="All Status"
+            data={['All Status', 'Sold Out', 'In Stock']}
+            defaultValue="All Status"
+            radius="xs"
+          />
+        </Box>
+
+        <Box style={{ width: 200 }}>
+          <Text size="xs" fw={500} mb={4} c="gray.7">Sales Channels</Text>
+          <MultiSelect
+            data={channels.map(c => ({ value: c.code, label: c.name }))}
+            placeholder="Select Channels"
+            value={selectedChannels}
+            onChange={onChannelsChange}
+            radius="xs"
+            clearable
+            styles={{
+              input: { 
+                maxHeight: rem(36), 
+                overflow: 'hidden', 
+                flexWrap: 'nowrap',
+                display: 'flex',
+                alignItems: 'center'
+              },
+              pill: { margin: '0 2px' },
+              inputField: { display: 'none' } // Hide input field when not searching to save space
+            }}
+          />
+        </Box>
+
+        <Box>
+            <Text size="xs" fw={500} mb={4} c="gray.7">Price Range</Text>
+            <Flex align="center" gap={8}>
+                <NumberInput placeholder="Min" hideControls radius="xs" style={{ width: 100 }} />
+                <Text size="xs" c="dimmed">-</Text>
+                <NumberInput placeholder="Max" hideControls radius="xs" style={{ width: 100 }} />
+            </Flex>
+        </Box>
+
+        <Group gap="sm" ml="auto">
+            <Button variant="subtle" color="gray" leftSection={<IconArrowsSort size={16} />} size="sm">
+                More Filters
             </Button>
-         </Flex>
-      ) : (
-        <>
-            <Button variant="default" leftSection={<IconDownload size={16} />} size="xs" onClick={onDownload}>下载全部商品</Button>
-            <Button variant="default" size="xs" onClick={onReset}>重置</Button>
-            <Button color="yellow.6" size="xs" onClick={onQuery}>查询</Button>
-        </>
-      )}
-    </Group>
+            <Button variant="default" onClick={onReset} size="sm" px="xl">Reset</Button>
+            <Button color="black" onClick={onQuery} size="sm" px="xl">Query</Button>
+        </Group>
+      </Flex>
+    </Stack>
   );
 
   if (isMobile) {
@@ -87,56 +113,26 @@ export function ProductFilterBar({
           boxShadow: '0 -2px 10px rgba(0,0,0,0.05)' 
         }}
       >
-        {ActionButtons}
+        <Group gap="xs" grow px="xs" py="xs">
+            <UnstyledButton onClick={onManageCategories}>
+                <Stack gap={2} align="center">
+                    <IconCategory size={20} stroke={1.5} />
+                    <Text size="xs" fw={500}>分类</Text>
+                </Stack>
+            </UnstyledButton>
+            <Button
+                leftSection={<IconPlus size={18} />}
+                radius="xl"
+                color="yellow.6"
+                size="sm"
+                onClick={onNew}
+            >
+                新建
+            </Button>
+         </Group>
       </Box>
     );
   }
 
-  return (
-    <Box p="sm" bg="white" style={{ borderBottom: '1px solid #f0f0f0' }}>
-      <Stack gap="xs">
-        <Flex gap="md" align="center">
-          <TextInput
-            placeholder="请输入商品名称/品牌/条码查找"
-            leftSection={<IconSearch size={18} color="#999" />}
-            radius="xl"
-            style={{ flex: 1 }}
-            value={search}
-            onChange={(e) => onSearchChange(e.currentTarget.value)}
-            styles={{
-              input: {
-                backgroundColor: '#f5f5f5',
-                border: 'none',
-                borderRadius: rem(20),
-              }
-            }}
-          />
-          {ActionButtons}
-        </Flex>
-        <Flex gap="md" align="center">
-          <Select
-            placeholder="库存状态"
-            size="xs"
-            data={['全部', '售罄', '库存充足']}
-            style={{ width: 150 }}
-          />
-          <Flex align="center" gap={4}>
-            <Text size="xs">月售</Text>
-            <NumberInput size="xs" placeholder="最小值" style={{ width: 80 }} />
-            <Text size="xs">-</Text>
-            <NumberInput size="xs" placeholder="最大值" style={{ width: 80 }} />
-          </Flex>
-          <MultiSelect
-            data={channels.map(c => ({ value: c.code, label: c.name }))}
-            placeholder="更多渠道"
-            size="xs"
-            clearable
-            value={selectedChannels}
-            onChange={onChannelsChange}
-            style={{ width: 150 }}
-          />
-        </Flex>
-      </Stack>
-    </Box>
-  );
+  return DesktopFilter;
 }

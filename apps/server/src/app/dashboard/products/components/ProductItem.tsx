@@ -1,5 +1,5 @@
-import { Box, Flex, Stack, Text, Group, Button, Image, Badge, Popover, UnstyledButton, rem } from '@mantine/core';
-import { IconPhoto } from '@tabler/icons-react';
+import { Box, Flex, Stack, Text, Group, Button, Image, Badge, UnstyledButton, rem, Checkbox } from '@mantine/core';
+import { IconPhoto, IconPencil, IconDots } from '@tabler/icons-react';
 import { VariantsPopover } from './VariantsPopover';
 import { Product } from '../types';
 
@@ -20,9 +20,9 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
   
   const prices = product.variants?.map(v => Number(v.price)) || [];
-  const minPrice = prices.length > 0 ? Math.min(...prices) : product.priceRef;
-  const maxPrice = prices.length > 0 ? Math.max(...prices) : product.priceRef;
-  const priceDisplay = minPrice === maxPrice ? `¥${minPrice}` : `¥${minPrice}-${maxPrice}`;
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+  const priceDisplay = minPrice === maxPrice ? minPrice.toFixed(2) : `${minPrice.toFixed(2)}-${maxPrice.toFixed(2)}`;
 
   if (isMobile) {
     return (
@@ -36,11 +36,6 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
                 <IconPhoto size={24} color="#ddd" />
               </Box>
             )}
-            {product.status === 'INACTIVE' && (
-              <Box pos="absolute" bottom={0} left={0} right={0} bg="rgba(0,0,0,0.6)" py={2} style={{ borderBottomLeftRadius: rem(4), borderBottomRightRadius: rem(4) }}>
-                <Text size="10px" c="white" ta="center">已下架</Text>
-              </Box>
-            )}
           </Box>
 
           <Stack gap={2} style={{ flex: 1, overflow: 'hidden' }}>
@@ -50,45 +45,14 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
             
             <Group gap={4} mt={1}>
               <Text size="xs" c="dimmed">SPU: {product.displayId}</Text>
-              {product.channels?.map(pc => (
-                <Box key={pc.channel.code} style={{ display: 'flex', alignItems: 'center' }}>
-                  {pc.channel.icon ? (
-                    <Image src={pc.channel.icon} w={14} h={14} radius="xs" alt={pc.channel.name} />
-                  ) : (
-                    <Badge size="xs" variant="outline" color="gray" px={2} h={14} radius="xs" style={{ border: '1px solid #eee', color: '#999', fontSize: '8px', lineHeight: '12px' }}>
-                      {pc.channel.name.slice(0, 1)}
-                    </Badge>
-                  )}
-                </Box>
-              ))}
             </Group>
-
-            {product.categories && product.categories.length > 0 && (
-              <Group gap={4} mt={2}>
-                {product.categories.slice(0, 3).map(c => (
-                  <Badge key={c.category.id} variant="light" color="blue" size="xs" radius="xs" style={{ fontSize: '9px', height: '16px' }}>
-                    {c.category.name}
-                  </Badge>
-                ))}
-                {product.categories.length > 3 && <Text size="10px" c="dimmed">...</Text>}
-              </Group>
-            )}
 
             <Group gap="xs" mt={2}>
-              <Text size="xs" c="dimmed">月售 0</Text>
-              <Text size="xs" c="dimmed">库存 {totalStock}</Text>
-            </Group>
-            <Group gap={4} align="baseline" mt={2}>
-              <Text size="md" c="red.7" fw={700}>{priceDisplay}</Text>
+              <Text size="xs" c="dimmed">Stock {totalStock}</Text>
+              <Text size="xs" c="red.7" fw={700}>¥{priceDisplay}</Text>
             </Group>
 
             <Group justify="flex-end" gap="xs" mt="auto">
-              <Button variant="outline" color="gray" size="compact-xs" radius="xl" fw={400} px="sm" style={{ borderColor: '#eee' }}>
-                价格/库存
-              </Button>
-              <Button variant="outline" color="gray" size="compact-xs" radius="xl" fw={400} px="sm" style={{ borderColor: '#eee' }}>
-                下架
-              </Button>
               <Button
                 variant="outline"
                 color="gray"
@@ -99,7 +63,7 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
                 style={{ borderColor: '#eee' }}
                 onClick={() => onEdit(product.id)}
               >
-                编辑
+                Edit
               </Button>
             </Group>
           </Stack>
@@ -109,95 +73,60 @@ export function ProductItem({ product, onEdit, isMobile }: ProductItemProps) {
   }
 
   return (
-    <Box py="md" style={{ borderBottom: `${rem(1)} solid #f5f5f5` }}>
+    <Box py="sm" style={{ borderBottom: `${rem(1)} solid #f1f3f5` }}>
       <Flex align="center">
-        <Flex gap="sm" style={{ width: '35%', overflow: 'hidden' }}>
-          <Box pos="relative" w={80} h={80} style={{ flexShrink: 0 }}>
+        <Box style={{ width: 40 }}><Checkbox size="xs" /></Box>
+        
+        <Flex gap="md" style={{ width: '35%', overflow: 'hidden' }} align="center">
+          <Box pos="relative" w={56} h={56} style={{ flexShrink: 0 }}>
             {mainImage ? (
-              <Image src={mainImage} radius="sm" w={80} h={80} fit="cover" alt={product.name} />
+              <Image src={mainImage} radius="sm" w={56} h={56} fit="cover" alt={product.name} />
             ) : (
-              <Box w={80} h={80} bg="gray.1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: rem(4) }}>
-                <IconPhoto size={24} color="#ddd" />
-              </Box>
-            )}
-            {product.status === 'INACTIVE' && (
-              <Box pos="absolute" bottom={0} left={0} right={0} bg="rgba(0,0,0,0.6)" py={2} style={{ borderBottomLeftRadius: rem(4), borderBottomRightRadius: rem(4) }}>
-                <Text size="10px" c="white" ta="center">已下架</Text>
+              <Box w={56} h={56} bg="gray.0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: rem(4) }}>
+                <IconPhoto size={20} color="#dee2e6" />
               </Box>
             )}
           </Box>
-          <Stack gap={4} justify="center" style={{ overflow: 'hidden' }}>
-            <Text size="sm" fw={600} lineClamp={1} style={{ cursor: 'pointer' }} onClick={() => onEdit(product.id)}>
+          <Stack gap={0} justify="center" style={{ overflow: 'hidden' }}>
+            <Text size="sm" fw={600} lineClamp={1} style={{ cursor: 'pointer', color: '#212529' }} onClick={() => onEdit(product.id)}>
               {product.name}
             </Text>
-            <Group gap={6} align="center">
-              <Text size="xs" c="dimmed">SPU: {product.displayId}</Text>
-              <Group gap={4}>
-                {product.channels?.map(pc => (
-                  <Box key={pc.channel.code} style={{ display: 'flex', alignItems: 'center' }}>
-                    {pc.channel.icon ? (
-                      <Image src={pc.channel.icon} w={16} h={16} radius="xs" alt={pc.channel.name} />
-                    ) : (
-                      <Badge size="xs" variant="outline" color="gray" px={4} radius="xs" style={{ border: '1px solid #eee', color: '#999', fontSize: '9px' }}>
-                        {pc.channel.name.slice(0, 2)}
-                      </Badge>
-                    )}
-                  </Box>
-                ))}
-              </Group>
-            </Group>
-
-            {product.categories && product.categories.length > 0 && (
-              <Group gap={4}>
-                {product.categories.slice(0, 5).map(c => (
-                  <Badge key={c.category.id} variant="light" color="blue" size="xs" radius="xs" style={{ fontSize: '9px', height: '16px' }}>
-                    {c.category.name}
-                  </Badge>
-                ))}
-                {product.categories.length > 5 && <Text size="10px" c="dimmed">...</Text>}
-              </Group>
-            )}
+            <Text size="xs" c="dimmed">SPU: {product.displayId}</Text>
+            <Text size="xs" c="dimmed">Barcode: 69201029384</Text>
           </Stack>
         </Flex>
 
-        <Box style={{ width: '20%' }} px="xs">
-          <Text size="xs" c="dimmed">条形码: -</Text>
-          <Text size="xs" c="dimmed">店内码/货号: {product.variants?.[0]?.storeCode || '-'}</Text>
-          {variantsCount > 1 && (
-            <Popover width={400} position="bottom" withArrow shadow="md">
-              <Popover.Target>
-                <Text size="xs" c="blue.6" style={{ cursor: 'pointer' }}>查看全部 {variantsCount} 个规格</Text>
-              </Popover.Target>
-              <Popover.Dropdown p={0}>
-                <VariantsPopover variants={product.variants} />
-              </Popover.Dropdown>
-            </Popover>
-          )}
-        </Box>
-
-        <Box style={{ width: '15%' }} px="xs">
-          <Text size="sm" fw={700} c="red.7">{priceDisplay}</Text>
+        <Box style={{ width: '15%' }} px="xs" ta="center">
+          <Text size="sm" fw={600} c="red.7">{priceDisplay}</Text>
         </Box>
 
         <Box style={{ width: '10%' }} px="xs" ta="center">
-          <Text size="sm">0</Text>
+          <Text size="sm" c="gray.8">{totalStock}</Text>
         </Box>
 
         <Box style={{ width: '10%' }} px="xs" ta="center">
-          <Text size="sm">{totalStock}</Text>
+          <Text size="sm" c="gray.8">0</Text>
         </Box>
 
-        <Stack gap={4} style={{ width: '10%' }} align="flex-end">
-          <UnstyledButton onClick={() => onEdit(product.id)}>
-            <Text size="xs" c="orange.7">编辑</Text>
+        <Box style={{ width: '10%' }} px="xs" ta="center">
+          <Badge 
+            variant="light" 
+            color={product.status === 'ACTIVE' ? 'green' : 'gray'} 
+            size="sm"
+            styles={{ root: { textTransform: 'none' } }}
+          >
+            {product.status === 'ACTIVE' ? 'Selling' : 'Delisted'}
+          </Badge>
+        </Box>
+
+        <Group gap={8} style={{ width: '10%' }} justify="flex-end" px="xs">
+          <UnstyledButton onClick={() => onEdit(product.id)} p={4} style={{ borderRadius: 4, transition: 'background 0.2s' }}>
+            <IconPencil size={18} color="var(--mantine-color-orange-6)" />
           </UnstyledButton>
-          <UnstyledButton>
-            <Text size="xs" c="orange.7">{product.status === 'ACTIVE' ? '下架' : '上架'}</Text>
+          <UnstyledButton p={4} style={{ borderRadius: 4, transition: 'background 0.2s' }}>
+            <IconDots size={18} color="var(--mantine-color-gray-5)" />
           </UnstyledButton>
-          <UnstyledButton>
-            <Text size="xs" c="orange.7">删除</Text>
-          </UnstyledButton>
-        </Stack>
+        </Group>
       </Flex>
     </Box>
   );

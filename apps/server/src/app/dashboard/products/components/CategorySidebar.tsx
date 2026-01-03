@@ -33,75 +33,77 @@ export function CategorySidebar({ categories, activeMenuId, summaryCounts, onCat
   };
 
   return (
-    <Box w={isMobile ? 100 : 160} bg="#f8f8f8" style={{ borderRight: '1px solid #f0f0f0', position: 'relative' }}>
+    <Box w={isMobile ? 120 : 180} h="100%" bg="#fdfdfd" style={{ borderRight: '1px solid #f0f0f0', position: 'relative' }}>
       <Flex direction="column" h="100%">
-        <Box bg={activeMenuId === 'all' ? 'white' : 'transparent'}>
-          <UnstyledButton
-            w="100%"
-            p={isMobile ? "md" : "lg"}
-            style={{
-              borderLeft: activeMenuId === 'all' ? `${rem(4)} solid #fab005` : 'none',
-              backgroundColor: activeMenuId === 'all' ? '#fff' : 'transparent',
-            }}
-            onClick={() => onCategoryClick('all')}
-          >
-            <Stack gap={0} align="center">
-              <Text size="sm" ta="center" fw={activeMenuId === 'all' ? 700 : 400}>全部</Text>
-              <Text size="10px" c="dimmed">{summaryCounts.all} 商品</Text>
-            </Stack>
-          </UnstyledButton>
-        </Box>
+        <UnstyledButton
+          w="100%"
+          p={isMobile ? "sm" : "md"}
+          style={{
+            backgroundColor: activeMenuId === 'all' ? '#fff' : 'transparent',
+            borderBottom: '1px solid #f5f5f5'
+          }}
+          onClick={() => onCategoryClick('all')}
+        >
+          <Stack gap={0} align={isMobile ? "flex-start" : "flex-start"}>
+            <Text size="sm" fw={activeMenuId === 'all' ? 700 : 400} c={activeMenuId === 'all' ? 'yellow.8' : 'dimmed'}>
+                All Products
+            </Text>
+            {!isMobile && <Text size="10px" c="dimmed">{summaryCounts.all}</Text>}
+          </Stack>
+        </UnstyledButton>
 
         <ScrollArea style={{ flex: 1 }}>
           <Stack gap={0}>
             {getTreeCategories().map((category) => (
               <UnstyledButton
                 key={category.id}
-                p={isMobile ? "xs" : "sm"}
+                p={isMobile ? "sm" : "sm"}
+                px={isMobile ? "sm" : "md"}
                 style={{
-                  borderLeft: activeMenuId === category.id ? `${rem(4)} solid #fab005` : 'none',
                   backgroundColor: activeMenuId === category.id ? '#fff' : 'transparent',
-                  paddingLeft: rem(category.depth * 12 + (isMobile ? 8 : 16)),
-                  transition: 'all 0.2s'
+                  paddingLeft: isMobile ? rem(category.depth * 8 + 8) : rem(category.depth * 12 + 16),
+                  borderLeft: activeMenuId === category.id ? `${rem(2)} solid var(--mantine-color-yellow-6)` : '2px solid transparent',
                 }}
                 onClick={() => onCategoryClick(category.id)}
               >
-                <Stack gap={0}>
-                  <Text
-                    size="sm"
-                    fw={activeMenuId === category.id ? 700 : 400}
-                    lineClamp={1}
-                    c={category.depth > 0 ? 'dimmed' : undefined}
-                  >
-                    {category.name}
-                  </Text>
-                  <Text size="10px" c="dimmed">
-                    {category._count?.products || 0} 商品
-                  </Text>
-                </Stack>
+                <Flex justify="space-between" align="center" gap={8}>
+                    <Text
+                        size="sm"
+                        fw={activeMenuId === category.id ? 600 : 400}
+                        c={activeMenuId === category.id ? 'black' : 'gray.7'}
+                        style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
+                    >
+                        {category.name}
+                    </Text>
+                    {!isMobile && (
+                        <Text size="10px" c="dimmed" bg="gray.0" px={4} style={{ borderRadius: 10, flexShrink: 0 }}>
+                            {category._count?.products || 0}
+                        </Text>
+                    )}
+                </Flex>
               </UnstyledButton>
             ))}
           </Stack>
         </ScrollArea>
 
-        <Box bg={activeMenuId === 'uncategorized' ? 'white' : 'transparent'} style={{ borderTop: '1px solid #f0f0f0' }}>
-          <UnstyledButton
-            w="100%"
-            p={isMobile ? "xs" : "sm"}
-            style={{
-              borderLeft: activeMenuId === 'uncategorized' ? `${rem(4)} solid #fab005` : 'none',
-              backgroundColor: activeMenuId === 'uncategorized' ? '#fff' : 'transparent',
-            }}
-            onClick={() => onCategoryClick('uncategorized')}
-          >
-            <Stack gap={0} align="center">
-              <Group gap={4} justify="center">
-                <Text size="xs" fw={activeMenuId === 'uncategorized' ? 700 : 400}>未分类</Text>
-                <IconInfoCircle size={12} color="#999" />
-              </Group>
-              <Text size="10px" c="dimmed">{summaryCounts.uncategorized} 商品</Text>
-            </Stack>
-          </UnstyledButton>
+        <Box p="xs" style={{ borderTop: '1px solid #f0f0f0', bg: 'white' }}>
+            <UnstyledButton
+                w="100%"
+                p="xs"
+                style={{
+                    borderRadius: rem(8),
+                    backgroundColor: activeMenuId === 'uncategorized' ? 'var(--mantine-color-gray-0)' : 'transparent',
+                }}
+                onClick={() => onCategoryClick('uncategorized')}
+            >
+                <Group gap={8} justify={isMobile ? "flex-start" : "flex-start"} wrap="nowrap">
+                    <IconInfoCircle size={16} color="var(--mantine-color-gray-5)" style={{ flexShrink: 0 }} />
+                    <Text size="xs" fw={activeMenuId === 'uncategorized' ? 600 : 400} c="gray.7" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                        Uncategorized
+                    </Text>
+                    {!isMobile && <Text size="10px" c="dimmed" ml="auto">{summaryCounts.uncategorized}</Text>}
+                </Group>
+            </UnstyledButton>
         </Box>
       </Flex>
     </Box>
